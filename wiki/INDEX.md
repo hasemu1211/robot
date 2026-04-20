@@ -3,6 +3,35 @@
 > 모든 robot child 프로젝트가 공유하는 크로스-프로젝트 지식 베이스.
 > 각 child의 SessionStart 훅이 이 파일을 자동 로드합니다.
 
+## 📌 Next Session TODO (2026-04-20 세션 2회 핸드오프)
+
+### 🔹 Next Session 1 — Q2 스킬 검토 & 매핑 (parent scope)
+- **cwd**: `cd ~/robot && claude`
+- **시작 prompt**: `/oh-my-claudecode:brainstorming` — OMC + superpowers + skill-creator 스킬 전수 검토, 중복/사용빈도/robot 적합성 분류
+- **heavy lookup**: `/oh-my-claudecode:external-context` 또는 `document-specialist` 병렬
+- **결정 포함**: 슈퍼파워 플러그인 유지 여부 (tdd만 유니크; 나머지는 OMC 대응 있음)
+- **산출물**: `~/robot/wiki/omc_workflows.md` § 주요 스킬 요약 확장
+
+### 🔹 Next Session 2 — Q1 서브에이전트 MCP 격리 가이드 (child scope)
+- **cwd**: `cd ~/robot/datafactory && claude`
+- **시작 prompt**: `/oh-my-claudecode:deep-interview` — 우회 3가지 (inline `mcpServers`, EnterWorktree, omc-teams tmux) 선택 기준
+- **관련 Anthropic 이슈**: #16177 #4476 (둘 다 open)
+- **산출물**: `mcp_isolation.md` 가이드 + 데코레이터/예제 → child `wiki/`에 먼저, 2+ children에 적용 가능하면 `promote.sh`로 global 승격
+
+### 세션 진행 요령
+- 새 세션에서 SessionStart 훅이 이 INDEX.md 자동 주입 → 맥락 이어짐
+- Context 부담되면 새 세션 중에도 `/clear` (state 디스크에 있어 resume OK)
+- `/oh-my-claudecode:cancel`로 autopilot/ralph 중단 가능
+
+## 지난 세션 성과 (2026-04-20)
+- Deep-interview spec (ambiguity 11.25%, 6 rounds)
+- Ralplan v3.1 consensus plan (Architect PASS + Critic APPROVE, 4 iterations)
+- ~/robot/ parent repo created (commits: eacfce2 → 5df7f8d)
+- DATAFACTORY → ~/robot/datafactory symlink migration (atomic 8fa75a5)
+- 2-Tier wiki 훅 + bootstrap-child.sh + promote.sh
+- BLOCKING smoke 통과 (Isaac Sim MCP 8766 + ROS2 9090 + execute_script 4.5)
+- WezTerm picker: ~/robot/* 스캔 + robot (parent) 첫 항목
+
 ## 교훈 & 레퍼런스
 
 - [Isaac Sim API 패턴](isaac_sim_api_patterns.md) — 4.5.0 API 경로, 4.2→4.5 패치, Kit extension 로딩
