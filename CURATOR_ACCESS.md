@@ -62,31 +62,52 @@ tmux a                                # 마지막 세션 attach
 
 tmux 세션 사망 → Claude 대화도 사망. 하지만 **산출물은 git + .omc/에 영속**.
 
-### 옵션 A — `claude --continue` (같은 cwd의 최근 대화 복구)
+### ⚠️ 핵심 원칙: `claude --continue`는 **실행 cwd의 project 해시에 묶인 최근 대화**만 복구
+
+Claude Code는 세션 시작 시 cwd로 project hash를 고정 (`~/.claude/projects/<hash>/`). `cd`로 이동해도 불변. 따라서:
+
+| 세션 유형 | 재개 명령 |
+|---|---|
+| **Parent curator 세션** (cwd=~/robot/으로 시작한) | `cd ~/robot && claude --continue` |
+| **Child 세션** (cwd=~/Desktop/Project/DATAFACTORY로 시작한) | `cd ~/Desktop/Project/DATAFACTORY && claude --continue` |
+| **심링크로 진입한 child 세션** (cwd=~/robot/datafactory) | **미검증** — realpath 해시일 수도, literal 해시일 수도. 일관성 위해 **real path 사용 권장** |
+
+→ 어제 어느 cwd에서 세션을 시작했는지 기억해야 함. 세션 시작 후 `cd`로 이동했더라도 **시작 cwd가 project hash를 결정**.
+
+### 옵션 A — `claude --continue` (대화 이어)
 ```bash
-cd ~/robot        # curator 스코프로 돌아감
-claude --continue # 어제 대화 이어열기 (토큰 많을 수 있음)
+# 어제 시작 cwd 확인 (Claude Code 로그 위치로 역추적)
+ls -t ~/.claude/projects/ | head -5   # 최근 project 해시들
+
+cd <어제 시작 cwd>       # 정확히 그 경로
+claude --continue
 ```
 - 장점: 어제 대화 맥락 일부 복원
-- 단점: cwd별 기억. `cd ~/robot/datafactory`에서는 child 대화가 이어짐
+- 단점: cwd mismatch면 잘못된 대화 or 빈 project 열림
 
-### 옵션 B — 완전 새 세션 (권장, 토큰 절약)
+### 옵션 B — 완전 새 세션 (권장, 토큰 절약 + 혼동 방지)
 ```bash
-cd ~/robot
+cd ~/robot             # curator 스코프
 claude
-# 첫 프롬프트:
-# "INDEX.md 읽었어. 다음 TODO를 봐줘."
+# 첫 프롬프트 예:
+# "INDEX.md + CURATOR_ACCESS.md 읽었어. 어제 git log 보고 재개할 곳 알려줘."
 ```
-- 장점: clean slate, 토큰 0. SessionStart 훅이 핵심 맥락 재주입
-- 단점: 어제의 세세한 논의는 git log + commit msg로 재구성해야 함 (commit message 잘 쓰면 OK)
+- 장점: clean slate, SessionStart 훅이 INDEX.md + AGENTS.md 재주입 → 핵심 맥락 자동 복원
+- 단점: 어제의 세세한 nuance는 git log + commit msg + `.omc/specs|plans` 읽어서 재구성 (commit msg "왜" 중심이면 쉬움)
 
-### 옵션 C — /compact 후 이어하기 (이미 열려있는 세션)
+### 옵션 C — /compact (이미 열린 세션 유지)
 ```
 /compact
 ```
 - 현재 대화 요약 압축, PostCompact 훅이 AGENTS + wiki 재주입
 - 장점: 세션 유지하며 토큰 감량
 - 단점: 세세한 nuance 손실
+
+### 옵션 추천 프레임
+
+- **토큰 여유 + 동일 주제**: A (--continue)
+- **토큰 타이트 or 주제 전환**: B (새 세션)
+- **지금 진행 중인데 토큰 압박**: C (/compact)
 
 ---
 
