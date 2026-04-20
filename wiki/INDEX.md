@@ -7,8 +7,9 @@
 
 ### 🔹 Next Session 1 — Q2 스킬 검토 & 매핑 (parent scope)
 - **cwd**: `cd ~/robot && claude`
-- **시작 prompt**: `/oh-my-claudecode:brainstorming` — OMC + superpowers + skill-creator 스킬 전수 검토, 중복/사용빈도/robot 적합성 분류
-- **heavy lookup**: `/oh-my-claudecode:external-context` 또는 `document-specialist` 병렬
+- **주의**: `/oh-my-claudecode:brainstorming`은 **존재하지 않음**. `oh-my-claudecode:brainstorm`은 deprecated alias (deep-interview로 리다이렉트). 스킬 검토는 design이 아닌 survey 성격이라 deep-interview/brainstorming 모두 과함.
+- **권장 방식**: 직접 대화 + `/oh-my-claudecode:external-context` (document-specialist 병렬 조사)로 각 스킬 description·use-case 수집 → 테이블 정리
+- **대안**: 스킬 선택이 복잡해지면 `superpowers:brainstorming` 전환 가능
 - **결정 포함**: 슈퍼파워 플러그인 유지 여부 (tdd만 유니크; 나머지는 OMC 대응 있음)
 - **산출물**: `~/robot/wiki/omc_workflows.md` § 주요 스킬 요약 확장
 
