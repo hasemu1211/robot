@@ -1,0 +1,28 @@
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "teammateMode": "tmux",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PARENT=$HOME/robot; ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo \"$PARENT\"); { echo '## Global wiki'; cat \"$PARENT/wiki/INDEX.md\" 2>/dev/null; echo; echo '## Project wiki'; cat \"$ROOT/wiki/INDEX.md\" 2>/dev/null; echo; echo '## AGENTS.md'; cat \"$ROOT/AGENTS.md\" 2>/dev/null; } | jq -Rs '{hookSpecificOutput: {hookEventName: \"SessionStart\", additionalContext: .}}'"
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PARENT=$HOME/robot; ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo \"$PARENT\"); { echo '## Global wiki'; cat \"$PARENT/wiki/INDEX.md\" 2>/dev/null; echo; echo '## Project wiki'; cat \"$ROOT/wiki/INDEX.md\" 2>/dev/null; echo; echo '## AGENTS.md'; cat \"$ROOT/AGENTS.md\" 2>/dev/null; } | jq -Rs '{hookSpecificOutput: {hookEventName: \"PostCompact\", additionalContext: .}}'"
+          }
+        ]
+      }
+    ]
+  }
+}
