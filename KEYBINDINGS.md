@@ -1,23 +1,23 @@
 # KEYBINDINGS — robot 개발환경 단축키 정리
 
-> WezTerm + tmux + Claude Code + OMC 조합. 이 파일은 `~/robot/` 루트에 있지만, 키 변경이 생기면 여기를 업데이트하세요.
+> tmux + Claude Code + OMC + robot scripts 통합. 이 파일은 `~/robot/` 루트에 있지만, 키 변경이 생기면 여기를 업데이트하세요.
+>
+> **WezTerm 단축키는 [`~/.config/wezterm/KEYBINDINGS.md`](../.config/wezterm/KEYBINDINGS.md)를 참조하세요.** WezTerm 내부에서 `Ctrl+Shift+?`를 누르면 해당 파일이 오버레이로 뜹니다. `wezterm-keybindings-sync` 스킬이 `wezterm.lua` 변경 시 해당 파일을 자동 갱신합니다 (이 파일은 건드리지 않음).
 
 ---
 
-## 1. WezTerm (터미널 프론트)
+## 1. WezTerm — 외부 파일로 이관 (중복 제거)
 
-| 키 | 동작 |
-|---|---|
-| `Ctrl+Shift+T` | 새 탭 (프로젝트 picker 팝업 — `~/robot/*` 스캔) |
-| `Ctrl+Shift+W` | 현재 탭 닫기 (확인 없음) |
-| `Ctrl+Shift+←/→` | 탭 전환 |
-| `Ctrl+Shift+1` ~ `9` | N번 탭 바로가기 |
-| `Ctrl+Shift+|` | 가로 분할 (같은 cwd) |
-| `Ctrl+Shift+_` | 세로 분할 (같은 cwd) |
-| `Ctrl+Shift+H/J/K/L` | 포커스 이동 (왼/아래/위/오른쪽 — vim 스타일) |
-| 드래그 (without Shift) | tmux가 가로챔 — 아래 tmux 복사 방법 사용 |
-| **Shift+드래그** | tmux 우회 → 네이티브 wezterm 선택 → 자동 클립보드 복사 |
-| 우클릭 | 클립보드 붙여넣기 |
+**전체 목록**: `~/.config/wezterm/KEYBINDINGS.md` (`Ctrl+Shift+?`로 팝업).
+**관리 주체**: `wezterm-keybindings-sync` 스킬이 `wezterm.lua` → md 싱크 담당.
+**이 파일에서 기억할 핵심만** (자주 잊는 것):
+
+| 키 | 동작 | 메모 |
+|---|---|---|
+| `Ctrl+Shift+?` | WezTerm 키 오버레이 열기 | 전체 참조 |
+| `Ctrl+Shift+P` | 프로젝트 picker (`~/robot/*` 스캔, robot parent도 선택지) | bootstrap-child.sh 등록된 child 자동 등장 |
+| `Ctrl+Shift+S` | 워크스페이스 목록/전환 | 프로젝트별 탭 묶음 |
+| `Ctrl+Shift+N` | 새 워크스페이스 | 새 robot child 작업용 |
 
 ---
 
