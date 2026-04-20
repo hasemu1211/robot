@@ -5,13 +5,31 @@
 
 ## 📌 Next Session TODO (2026-04-20 세션 2회 핸드오프)
 
-### 🔹 Next Session 1 — Q2 스킬 검토 & 매핑 (parent scope)
+### 🔹 Next Session 1 — Q2 스킬 생태계 Survey & 갭 분석 (parent scope)
 - **cwd**: `cd ~/robot && claude`
-- **주의**: `/oh-my-claudecode:brainstorming`은 **존재하지 않음**. `oh-my-claudecode:brainstorm`은 deprecated alias (deep-interview로 리다이렉트). 스킬 검토는 design이 아닌 survey 성격이라 deep-interview/brainstorming 모두 과함.
-- **권장 방식**: 직접 대화 + `/oh-my-claudecode:external-context` (document-specialist 병렬 조사)로 각 스킬 description·use-case 수집 → 테이블 정리
-- **대안**: 스킬 선택이 복잡해지면 `superpowers:brainstorming` 전환 가능
-- **결정 포함**: 슈퍼파워 플러그인 유지 여부 (tdd만 유니크; 나머지는 OMC 대응 있음)
-- **산출물**: `~/robot/wiki/omc_workflows.md` § 주요 스킬 요약 확장
+- **Scope**: 내부 큐레이션이 아닌 **생태계 전수 조사** (T1~T5):
+  - **T1 내부**: 현재 enabled 플러그인 25+ 스킬 description·use-case 수집
+  - **T2 생태계**: Isaac Sim / ROS2 / 로봇 특화 3rd-party 스킬·플러그인·MCP — `WebSearch`, `WebFetch`, GitHub MCP
+  - **T3 공식**: Anthropic marketplace, superpowers/OMC upstream 최신 상태
+  - **T4 갭 분석**: 필요한데 없는 것 → `skill-creator`/`skillify` 후보 spec 초안
+  - **T5 MCP 후보**: Exa (웹서치 품질↑), Docker MCP, PyBullet/Gazebo/MoveIt 등 로봇 MCP
+- **도구 (이미 사용 가능)**:
+  - `WebSearch`, `WebFetch` — 네이티브 deferred tools (Claude Code 기본 제공, Exa 없어도 OK)
+  - `mcp__github-mcp-server__search_repositories` — 이미 연결
+  - `context7` — 공식 문서 lookup
+  - `/oh-my-claudecode:external-context` — document-specialist 병렬 조사
+- **주의**: `/oh-my-claudecode:brainstorming`은 존재하지 않음. `brainstorm`은 deprecated(deep-interview alias). survey 성격이라 deep-interview/brainstorming 모두 과함 — 직접 대화로 진행.
+- **예시 쿼리**:
+  - `WebSearch: "Claude Code plugin Isaac Sim"`
+  - `WebSearch: "oh-my-claudecode skill robotics"`
+  - `WebSearch: "MCP server ROS2 Gazebo MoveIt"`
+  - `GitHub search: topic=claude-code topic=robotics`
+- **결정 포함**: ①슈퍼파워 플러그인 유지 여부 (tdd만 유니크) ②Exa MCP 도입 ③도입할 신규 스킬/MCP 후보 shortlist ④만들어야 할 커스텀 스킬 (e.g., `/robot:promote`, `/robot:isaac-api-guard`)
+- **산출물**:
+  - `~/robot/wiki/omc_workflows.md` § 주요 스킬 요약 확장 (T1)
+  - `~/robot/wiki/ecosystem_survey.md` 신설 (T2-T5)
+  - `~/robot/.omc/research/skill-gap-analysis-<date>.md`
+  - 필요 시 후속 세션용 spec 초안
 
 ### 🔹 Next Session 2 — Q1 서브에이전트 MCP 격리 가이드 (child scope)
 - **cwd**: `cd ~/robot/datafactory && claude`
