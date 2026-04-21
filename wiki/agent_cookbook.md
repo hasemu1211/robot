@@ -12,6 +12,7 @@
 |---|---|---|---|
 | plugin:context7 | 플러그인 | SDK/framework 최신 문서 조회 | `resolve-library-id` → `query-docs` |
 | plugin:oh-my-claudecode:t | 플러그인 | OMC 오케스트레이션 브리지 | `state_read/write`, `wiki_*`, `notepad_*` |
+| omc (CLI) | 시스템 도구 | 제미니가 클로드와 OMC 메모리 공유 | `omc state-read`, `omc wiki-write` |
 | github-mcp-server | user scope | 이슈/PR/리뷰 자동화 | `gh` CLI와 병행 사용 |
 | isaac-sim (8766) | child project | Isaac Sim 씬 제어 | `get_scene_info` 우선 호출 |
 | ros-mcp (9090) | child project | ROS2 토픽/서비스 (rosbridge) | `connect_to_robot` 우선 호출 |
