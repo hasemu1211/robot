@@ -1,65 +1,85 @@
-# robot — Parent template repo
+# robot — Parent distribution repo
 
-> 로봇 관련 프로젝트의 부모 템플릿. 자식 프로젝트(children)는 이 레포 구조를 따르며 OMC 워크플로우와 2-Tier wiki를 공유합니다.
+> 로봇 관련 프로젝트의 **공유 가능한 distribution**. 자식 프로젝트(children)는 이 레포 구조를 따르며 OMC 워크플로우와 2-Tier wiki를 공유합니다.
+
+상세 사용법 + 설치 가이드는 [`README.md`](README.md).
 
 ---
 
 ## Children (registered)
 
-<!-- bootstrap-child.sh이 등록한 child들 -->
-- [datafactory/](datafactory/) — V&V 기반 로봇 비전 합성 데이터 파이프라인 (Isaac Sim 4.5.0 + ROS2 humble, symlinked to `~/Desktop/Project/DATAFACTORY`)
+<!-- bootstrap-child.sh이 등록한 child들 (distribution 자체엔 포함 안 됨) -->
+
+_아직 등록된 child 없음. `./scripts/bootstrap-child.sh <name> --profile=isaac+ros2` 로 생성._
 
 ---
 
-## 구조
+## 구조 요약
 
 ```
 ~/robot/
-├── scripts/
-│   └── bootstrap-child.sh        # 새 child 프로젝트 scaffold
-├── wiki/                          # 글로벌 KB (크로스-child 지식)
-│   ├── INDEX.md                   # ← SessionStart 훅이 자동 로드
-│   ├── isaac_sim_api_patterns.md
-│   ├── ros2_bridge.md
-│   ├── omc_workflows.md
-│   └── mcp_lessons.md
-├── .claude/
-│   └── settings.json              # 2-Tier wiki 훅 + teammateMode
-├── .omc/
-│   ├── specs/                     # 설계 사양 (tracked)
-│   ├── plans/                     # 구현 계획 (tracked)
-│   └── research/                  # 조사 결과 (tracked)
-├── CLAUDE.md                      # OMC 기본값 → ~/.claude/CLAUDE.md 참조
-└── README.md                      # 레포 사용법
+├── scripts/                      # install.sh, doctor.sh, bootstrap-child.sh, merge-dotfiles.sh, promote.sh
+├── claude/                       # ~/.claude 주입 소스 (marker-based)
+├── dotfiles/                     # wezterm, tmux, xprofile (심링크 소스)
+├── templates/                    # child 생성용 파라미터화 템플릿 (docker, .mcp.json, AGENTS.md)
+├── vendor/                       # submodule (patched isaac-sim-mcp)
+├── external/                     # submodule (3rd-party robotics-agent-skills)
+├── wiki/                         # 🌐 global KB (Isaac / ROS2 / MCP / OMC / 호스트 교훈)
+├── docs/                         # distribution 사용자 문서 (INSTALL / HOST_PREREQUISITES / ...)
+├── .omc/{specs,plans,research}/  # tracked 설계 산출물
+├── .env.template                 # secrets 변수 reference (.env.local 은 gitignored)
+├── README.md · AGENTS.md · CLAUDE.md · KEYBINDINGS.md · CURATOR_ACCESS.md
 ```
 
 ## 2-Tier Wiki
 
-- **Global** (`~/robot/wiki/`): 모든 child가 참조하는 크로스-프로젝트 지식 — Isaac Sim API, ROS2 브릿지, OMC 워크플로우, MCP 교훈.
-- **Project-local** (`~/robot/<child>/wiki/`): 해당 child 고유의 교훈 — 각 child의 `.claude/settings.json` SessionStart 훅이 global + local 둘 다 자동 로드.
+- **Global** (`~/robot/wiki/`): 모든 child가 참조하는 크로스-프로젝트 지식 — Isaac Sim API, ROS2 bridge, OMC 워크플로우, MCP, 호스트 환경 교훈.
+- **Project-local** (`~/robot/<child>/wiki/`): 해당 child 고유의 교훈 — SessionStart 훅이 parent + local 둘 다 자동 로드.
 
-`/oh-my-claudecode:wiki` 스킬은 현재 cwd의 `wiki/` 디렉토리에 읽고 씁니다 → scope는 디렉토리 위치로 결정.
+`/oh-my-claudecode:wiki` 스킬은 현재 cwd의 `wiki/`를 읽고 씁니다 → scope는 디렉토리 위치로 결정.
+
+승격 규칙은 [`wiki/INDEX.md`](wiki/INDEX.md) § 승격 규칙 참조.
 
 ## 새 child 추가
 
 ```bash
-~/robot/scripts/bootstrap-child.sh <name>
-# 또는
-~/robot/scripts/bootstrap-child.sh <absolute_path_to_existing_repo>  # 심링크로 등록
+./scripts/bootstrap-child.sh <name> --profile=isaac+ros2|ros2|bare
+# 또는 기존 레포를 심링크로 등록:
+./scripts/bootstrap-child.sh /absolute/path/to/existing-repo
 ```
 
-생성된 child 디렉토리로 진입 후:
+생성 후:
 ```
-/oh-my-claudecode:deepinit        # 계층적 AGENTS.md
-/oh-my-claudecode:mcp-setup       # 프로젝트 MCP 격리
+cd ~/robot/<name>
+claude                                    # 2-Tier wiki 자동 로드
+/oh-my-claudecode:deepinit                # 계층적 AGENTS.md (선택)
+/oh-my-claudecode:mcp-setup               # MCP 격리 (선택 — 템플릿이 이미 기본 구성)
 ```
 
-## 도구
+## Distribution 도구
 
-- `oh-my-claudecode`: 멀티 에이전트 오케스트레이션 (`deepinit`, `plan`, `autopilot`, `wiki`, `mcp-setup`)
+- **install.sh** — 전체 distribution 레이어 설치 (host/dotfiles/cli/claude/vendor/child)
+- **doctor.sh** — 레이어 검증 (human + `--json`)
+- **merge-dotfiles.sh** — 기존 dotfile과 대화형 통합
+- **bootstrap-child.sh** — child scaffold + Docker 템플릿 치환
+- **promote.sh** — child wiki → global wiki 승격
+
+## 외부 의존
+
+- `oh-my-claudecode`: 멀티 에이전트 오케스트레이션 (`deepinit`, `plan`, `autopilot`, `wiki`, `mcp-setup`, `remember`)
 - `superpowers`: `brainstorming`, `writing-plans`, `tdd`, `verification-before-completion`
-- `context7`: 외부 API 문서 조회
+- `context7`: 외부 API 문서 조회 (Isaac Sim, ROS2, NumPy 등)
+- `rtk`: Claude Code Bash 훅 토큰 압축 (install.sh cli 레이어에 포함)
 
-## 핸드오프 메모
+## 설계 문서
 
-이 레포는 `DATAFACTORY/.omc/specs/deep-interview-robot-setup-repo.md`와 `.omc/plans/robot-setup-repo-plan.md`의 consensus 기반으로 생성되었습니다. 설계 의도는 이 두 문서 참조.
+distribution 자체의 설계 근거:
+
+- `.omc/specs/deep-interview-robot-distribution.md` — deep-interview spec (ambiguity 13.75% PASSED)
+- `.omc/plans/robot-distribution-plan.md` — consensus-approved 구현 계획 (iter 2 final)
+- `.omc/research/skill-gap-analysis-20260420.md` — 생태계 갭 분석
+- `wiki/ecosystem_survey.md` — 플러그인·스킬·MCP 카탈로그
+
+초기 parent repo 부트스트랩 시 (distribution 전 단계):
+- `.omc/specs/deep-interview-robot-setup-repo.md` (history)
+- `.omc/plans/robot-setup-repo-plan.md` (history)

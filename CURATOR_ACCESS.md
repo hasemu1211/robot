@@ -9,7 +9,7 @@
 ```
 ┌──────────────────────────────────────────────┐
 │ tmux 창 1: CURATOR   cd ~/robot && claude    │ ← 지금 네가 대화하는 내가 여기 있음
-│ tmux 창 2: child1    cd ~/robot/datafactory  │ ← 작업
+│ tmux 창 2: child1    cd ~/robot/<child>  │ ← 작업
 │ tmux 창 3: child2    cd ~/robot/<other>      │ ← 작업
 │ ...                                          │
 └──────────────────────────────────────────────┘
@@ -69,8 +69,8 @@ Claude Code는 세션 시작 시 cwd로 project hash를 고정 (`~/.claude/proje
 | 세션 유형 | 재개 명령 |
 |---|---|
 | **Parent curator 세션** (cwd=~/robot/으로 시작한) | `cd ~/robot && claude --continue` |
-| **Child 세션** (cwd=~/Desktop/Project/DATAFACTORY로 시작한) | `cd ~/Desktop/Project/DATAFACTORY && claude --continue` |
-| **심링크로 진입한 child 세션** (cwd=~/robot/datafactory) | **미검증** — realpath 해시일 수도, literal 해시일 수도. 일관성 위해 **real path 사용 권장** |
+| **Child 세션** (real path cwd) | `cd <real-path-to-child> && claude --continue` |
+| **심링크로 진입한 child 세션** (cwd=~/robot/<child>, 심링크) | **주의** — cwd 해시가 realpath 기준이면 OK, literal 문자열 기준이면 다른 세션으로 기록. 일관성 위해 **real path 사용 권장** |
 
 → 어제 어느 cwd에서 세션을 시작했는지 기억해야 함. 세션 시작 후 `cd`로 이동했더라도 **시작 cwd가 project hash를 결정**.
 
@@ -116,13 +116,13 @@ claude
 child 작업 후 curator에게 리포트할 때 쓸 수 있는 프롬프트:
 
 ```
-tmux 3번창에서 ~/robot/datafactory에서 XXX 작업했어 (commit SHA abc123).
+tmux 3번창에서 ~/robot/<child>에서 XXX 작업했어 (commit SHA abc123).
 git log랑 diff 확인해서 parent 정책/wiki에 반영할 거 있으면 의논하자.
 ```
 
 curator가 할 일:
-1. `git -C ~/robot/datafactory log --oneline -5`
-2. `git -C ~/robot/datafactory show abc123`
+1. `git -C ~/robot/<child> log --oneline -5`
+2. `git -C ~/robot/<child> show abc123`
 3. 필요 시 `~/robot/scripts/promote.sh <file>` 권고
 4. `~/robot/wiki/` 또는 `~/robot/AGENTS.md` 업데이트 제안 → 네 승인 후 commit
 
@@ -149,13 +149,13 @@ git post-commit 훅으로 자동 이벤트 주입 (설계는 `.omc/specs/deep-in
 
 ```bash
 # tmux 내부에서
-tmux new-window -n datafactory -c ~/robot/datafactory
+tmux new-window -n <child1> -c ~/robot/<child1>
 tmux new-window -n newchild -c ~/robot/newchild
 tmux new-window -n curator -c ~/robot
 
 # 창 전환
 Ctrl+b 1  → curator
-Ctrl+b 2  → datafactory
+Ctrl+b 2  → <child1>
 Ctrl+b 3  → newchild
 
 # 각 창에서 claude 띄우면 독립 세션, 독립 MCP 로드
@@ -192,7 +192,7 @@ cd ~/robot && claude
 ```
 docs(wiki): promote isaac_api_patterns to global
 
-from: ~/robot/datafactory/wiki/lessons_isaac_sim.md
+from: ~/robot/<child>/wiki/lessons_isaac_sim.md
 to:   ~/robot/wiki/isaac_sim_api_patterns.md
 reason: 2nd child (teleop-prototype) began hitting same 4.2→4.5 migration
 trigger: promote.sh checklist 3/5 (reproducible abstract pattern, 2+ children, repeat)

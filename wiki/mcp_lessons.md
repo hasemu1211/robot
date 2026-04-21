@@ -39,12 +39,12 @@ return [TextContent(type="text", text=json.dumps({"status": "ok", "payload": dat
 1. **먼저 연결 확인** — `get_scene_info()` (isaac-sim) 또는 `connect_to_robot()` (ros-mcp) 같은 "항상 먼저 호출" 도구로 연결 성공 확인.
 2. 실패 시 서버 프로세스 확인: `ps aux | grep -E 'isaac_mcp|ros-mcp'`.
 3. 포트 바인딩 확인: `netstat -tlnp | grep -E '8766|9090'`.
-4. 로그 확인: `docker logs datafactory_isaac_sim 2>&1 | tail -30 | grep MCP`.
+4. 로그 확인: `docker logs ${COMPOSE_PROJECT_NAME}_isaac_sim 2>&1 | tail -30 | grep MCP` (compose 실행 디렉토리 기준).
 
-## 주요 MCP 서버 (DATAFACTORY 검증됨)
+## 주요 MCP 서버 (distribution 포함)
 
 ### isaac-sim (포트 8766)
-- 실행: `uv run ~/Desktop/Project/isaac-sim-mcp/isaac_mcp/server.py`
+- 실행: `uv run ~/robot/vendor/isaac-sim-mcp/isaac_mcp/server.py`
 - 도구: `get_scene_info`, `create_physics_scene`, `execute_script`, `create_robot`, `transform`
 - Isaac Sim 내부에서 extension으로 TCP 리스너 (8766) 구동
 
@@ -89,7 +89,7 @@ claude mcp list
 
 # 특정 MCP 재등록
 claude mcp remove isaac-sim
-claude mcp add isaac-sim -- uv --directory ~/Desktop/Project/isaac-sim-mcp run isaac_mcp/server.py
+claude mcp add isaac-sim -- uv --directory ~/robot/vendor/isaac-sim-mcp run isaac_mcp/server.py
 
 # 세션 재시작 필요 (Claude Code가 MCP를 세션 시작 시에만 로드)
 ```

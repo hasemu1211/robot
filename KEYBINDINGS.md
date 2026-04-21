@@ -133,7 +133,7 @@
 - **SSH/wezterm 닫기**: 세션 유지 ✅ (`tmux attach`로 복귀)
 - **Suspend/Hibernate**: 유지 ✅ (컴퓨터 슬립 상태에서 tmux+claude 그대로)
 - **Shutdown/Reboot**: **세션 사망** ❌ — tmux 서버가 커널과 함께 죽음
-- → 다음날 이어하려면 **슬립** 권장, 불가피하면 `cd ~/robot/datafactory && claude --continue`
+- → 다음날 이어하려면 **슬립** 권장, 불가피하면 `cd ~/robot/<child> && claude --continue`
 
 ### WezTerm + IBus 한글 주의
 - `use_ime=true`로 한글 입력 OK
@@ -142,8 +142,8 @@
 
 ### Claude Code 세션 복원 ("이어하기")
 ```bash
-cd ~/robot/datafactory         # 또는 ~/robot/
-claude --continue              # 최근 대화 이어 열기 (해당 프로젝트 기준)
+cd ~/robot/<child>             # 또는 ~/robot/ (parent)
+claude --continue              # 최근 대화 이어 열기 (해당 cwd 기준)
 ```
 
 - 단, `--continue`는 **같은 cwd**의 최근 대화만 복구. 다른 cwd로 이동하면 해당 cwd의 대화가 복구됨.
