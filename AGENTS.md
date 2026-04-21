@@ -84,3 +84,4 @@ distribution 자체의 설계 근거:
 초기 parent repo 부트스트랩 시 (distribution 전 단계):
 - `.omc/specs/deep-interview-robot-setup-repo.md` (history)
 - `.omc/plans/robot-setup-repo-plan.md` (history)
+- [test-project/](test-project/) — new child (scaffolded 2026-04-21)
