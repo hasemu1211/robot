@@ -20,6 +20,15 @@
         "--transport=stdio"
       ],
       "env": {}
+    },
+    "omc": {
+      "type": "stdio",
+      "command": "sh",
+      "args": [
+        "-c",
+        "node \"$HOME/.claude/plugins/cache/omc/oh-my-claudecode/4.13.0/bridge/cli.cjs\" mcp"
+      ],
+      "env": {}
     }
   }
 }
