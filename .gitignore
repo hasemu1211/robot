@@ -15,6 +15,40 @@ __pycache__/
 *.pyc
 .cache/
 
-# Env
+# Env / secrets (user-specific, never committed)
 .env
+.env.local
 *.local
+
+# install.sh dotfile backups (timestamped, user-specific)
+*.pre-robot.*.bak
+
+# install.sh idempotency state (per-machine, not tracked)
+.omc/state/install/
+
+# .omc runtime logs (extension of .omc/logs/ already above)
+.omc/logs/install-*.log
+.omc/logs/settings-merge-*.log
+
+# Legacy / local-only symlinks (user-specific).
+# The distribution uses submodules (vendor/, external/) instead — see docs/INSTALL.md Phase B.
+/isaac-sim-mcp
+/datafactory
+
+# external/ — until submodule transition (Phase A-3)
+/external/robotics-agent-skills/
+
+# dotfiles backup files anywhere (already covered above, explicit for clarity)
+*.pre-rtk.*.bak
+
+# Node / editor runtime
+node_modules/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS cruft
+.DS_Store
+Thumbs.db
