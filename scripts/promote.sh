@@ -2,7 +2,7 @@
 # promote.sh — move a child's wiki/skill/setting file up to the parent ~/robot/ scope.
 #
 # Usage:
-#   promote.sh <child>/<relpath>              # e.g., datafactory/wiki/isaac_cache_volume.md
+#   promote.sh <child>/<relpath>              # e.g., myrobot/wiki/some_lesson.md
 #   promote.sh <child>/<relpath> --dst <dir>  # override destination (default: ~/robot/wiki/)
 #   promote.sh <child>/<relpath> --dry-run    # print plan without executing
 #   promote.sh <child>/<relpath> --skip-scan  # skip value pre-flight

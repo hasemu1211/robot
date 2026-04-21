@@ -2,35 +2,67 @@
 # bootstrap-child.sh — scaffold a new child project under ~/robot/
 #
 # Usage:
-#   bootstrap-child.sh <name>                    # create new child directory
-#   bootstrap-child.sh /absolute/path/to/repo    # register existing repo as symlink
-#   bootstrap-child.sh <name> --dry-run          # print plan without executing
-#   bootstrap-child.sh <name> --force            # overwrite existing child
+#   bootstrap-child.sh <name>                           # create (bare profile)
+#   bootstrap-child.sh <name> --profile=isaac+ros2      # Isaac Sim + ROS2 Docker stack
+#   bootstrap-child.sh <name> --profile=ros2            # ROS2 only
+#   bootstrap-child.sh <name> --profile=bare            # minimal scaffold (default)
+#   bootstrap-child.sh /absolute/path/to/repo           # register existing repo as symlink
+#   bootstrap-child.sh <name> --dry-run                 # print plan without executing
+#   bootstrap-child.sh <name> --force                   # overwrite existing child
 #
-# Outputs:
-#   ~/robot/<name>/ (new directory or symlink to absolute path)
+# Outputs (create mode):
+#   ~/robot/<name>/
 #     ├── wiki/INDEX.md
 #     ├── scripts/
 #     ├── .claude/settings.json  (inherits 2-Tier hooks)
 #     ├── .omc/{specs,plans,research}/
-#     ├── .mcp.json              (empty mcpServers)
-#     ├── AGENTS.md
+#     ├── .mcp.json              (empty for bare; isaac+ros2/ros2: templates/.mcp.json.tmpl 치환)
+#     ├── AGENTS.md              (templates/AGENTS.md.tmpl 치환)
 #     ├── README.md
-#     └── .gitignore
+#     ├── .gitignore
+#     └── docker/                (isaac+ros2 or ros2 only)
+#         ├── docker-compose.yml (${COMPOSE_PROJECT_NAME}, ${ROBOT_ROOT} 치환)
+#         ├── .env               (.env.template 치환)
+#         ├── Dockerfile.ros2
+#         ├── entrypoint-mcp.sh  (isaac+ros2 only)
+#         ├── enable_mcp.py      (isaac+ros2 only)
+#         └── isaacsim.streaming.mcp.kit (isaac+ros2 only)
+#
+# Template substitution variables (applied to compose.yml/.env/.mcp.json/AGENTS.md):
+#   ${COMPOSE_PROJECT_NAME}  → <name>
+#   ${PROJECT_NAME}          → <name>
+#   ${ROBOT_ROOT}            → resolved (env ROBOT_ROOT or git rev-parse --show-toplevel)
 
 set -euo pipefail
+
+# ── ROBOT_ROOT resolver (shared with install.sh / doctor.sh) ──
+resolve_robot_root() {
+  if [[ -n "${ROBOT_ROOT:-}" ]]; then echo "$ROBOT_ROOT"; return 0; fi
+  local anchor
+  if [[ -n "${BASH_SOURCE[0]:-}" ]]; then
+    anchor="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  else
+    anchor="$PWD"
+  fi
+  if git -C "$anchor" rev-parse --show-toplevel &>/dev/null; then
+    git -C "$anchor" rev-parse --show-toplevel; return 0
+  fi
+  echo "$HOME/robot"  # sensible default for distribution convention
+}
 
 DRY_RUN=0
 FORCE=0
 NAME=""
+PROFILE="bare"
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --dry-run) DRY_RUN=1; shift ;;
-    --force)   FORCE=1; shift ;;
+    --dry-run)       DRY_RUN=1; shift ;;
+    --force)         FORCE=1; shift ;;
+    --profile=*)     PROFILE="${1#*=}"; shift ;;
     -h|--help)
-      sed -n '/^# Usage:/,/^# Outputs:/p' "$0" | sed 's/^# \?//'
+      sed -n '/^# Usage:/,/^# Template/p' "$0" | sed 's/^# \?//'
       exit 0
       ;;
     -*) echo "Unknown flag: $1" >&2; exit 2 ;;
@@ -42,13 +74,19 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+case "$PROFILE" in
+  bare|ros2|isaac+ros2) ;;
+  *) echo "Unknown profile: $PROFILE (allowed: bare, ros2, isaac+ros2)" >&2; exit 2 ;;
+esac
+
 if [[ -z "$NAME" ]]; then
   echo "Usage: $0 <name-or-absolute-path> [--dry-run] [--force]" >&2
   exit 2
 fi
 
 # Detect mode: symlink (absolute path to existing dir) vs create (relative name)
-PARENT="$HOME/robot"
+PARENT="$(resolve_robot_root)"
+ROBOT_ROOT_RESOLVED="$PARENT"
 if [[ "$NAME" = /* ]] && [[ -d "$NAME" ]]; then
   MODE="symlink"
   TARGET_NAME="$(basename "$NAME")"
@@ -147,11 +185,28 @@ EOF
 }
 EOF
 
-  # .mcp.json empty scaffold
-  echo '{"mcpServers":{}}' > "$TARGET_PATH/.mcp.json"
+  # .mcp.json — empty for bare, else templates/.mcp.json.tmpl 치환
+  MCP_TMPL="$PARENT/templates/.mcp.json.tmpl"
+  mcp_tmpl="$MCP_TMPL"
+  if [[ "$PROFILE" != "bare" && -f "$mcp_tmpl" ]]; then
+    sed -e "s|\${ROBOT_ROOT}|$ROBOT_ROOT_RESOLVED|g" \
+        -e "s|\${PROJECT_NAME}|$TARGET_NAME|g" \
+        -e "s|\${COMPOSE_PROJECT_NAME}|$TARGET_NAME|g" \
+        "$mcp_tmpl" > "$TARGET_PATH/.mcp.json"
+    say "  .mcp.json from templates/.mcp.json.tmpl (profile=$PROFILE)"
+  else
+    echo '{"mcpServers":{}}' > "$TARGET_PATH/.mcp.json"
+  fi
 
-  # AGENTS.md stub
-  cat > "$TARGET_PATH/AGENTS.md" <<EOF
+  # AGENTS.md — templates/AGENTS.md.tmpl if present, else inline stub
+  agents_tmpl="$PARENT/templates/AGENTS.md.tmpl"
+  if [[ -f "$agents_tmpl" ]]; then
+    sed -e "s|\${PROJECT_NAME}|$TARGET_NAME|g" \
+        -e "s|\${COMPOSE_PROJECT_NAME}|$TARGET_NAME|g" \
+        -e "s|\${ROBOT_ROOT}|$ROBOT_ROOT_RESOLVED|g" \
+        "$agents_tmpl" > "$TARGET_PATH/AGENTS.md"
+  else
+    cat > "$TARGET_PATH/AGENTS.md" <<EOF
 # $TARGET_NAME — Project Instructions
 
 > Child of \`~/robot/\`. Global knowledge: \`~/robot/wiki/\`. Project-local: \`./wiki/\`.
@@ -177,6 +232,34 @@ claude
 
 세션 시작 시 2-Tier wiki 자동 로드: \`~/robot/wiki/INDEX.md\` + \`./wiki/INDEX.md\`.
 EOF
+  fi
+
+  # docker/ stack from templates (profile=isaac+ros2 or ros2)
+  if [[ "$PROFILE" != "bare" ]]; then
+    docker_src="$PARENT/templates/docker"
+    if [[ ! -d "$docker_src" ]]; then
+      say "WARN: $docker_src missing — docker/ stack skipped"
+    else
+      mkdir -p "$TARGET_PATH/docker"
+      # compose.yml + .env — always substitute
+      sed -e "s|\${COMPOSE_PROJECT_NAME}|$TARGET_NAME|g" \
+          -e "s|\${ROBOT_ROOT}|$ROBOT_ROOT_RESOLVED|g" \
+          "$docker_src/docker-compose.yml" > "$TARGET_PATH/docker/docker-compose.yml"
+      sed -e "s|\${COMPOSE_PROJECT_NAME}|$TARGET_NAME|g" \
+          -e "s|\${ROBOT_ROOT}|$ROBOT_ROOT_RESOLVED|g" \
+          "$docker_src/.env.template" > "$TARGET_PATH/docker/.env"
+      # Dockerfile.ros2 — ros2 / isaac+ros2 both need it
+      cp "$docker_src/Dockerfile.ros2" "$TARGET_PATH/docker/Dockerfile.ros2"
+      # Isaac-specific files — isaac+ros2 only
+      if [[ "$PROFILE" = "isaac+ros2" ]]; then
+        cp "$docker_src/entrypoint-mcp.sh" "$TARGET_PATH/docker/entrypoint-mcp.sh"
+        cp "$docker_src/enable_mcp.py" "$TARGET_PATH/docker/enable_mcp.py"
+        cp "$docker_src/isaacsim.streaming.mcp.kit" "$TARGET_PATH/docker/isaacsim.streaming.mcp.kit"
+        chmod +x "$TARGET_PATH/docker/entrypoint-mcp.sh"
+      fi
+      say "  docker/ stack from templates/docker/ (profile=$PROFILE)"
+    fi
+  fi
 
   # README.md stub
   cat > "$TARGET_PATH/README.md" <<EOF
