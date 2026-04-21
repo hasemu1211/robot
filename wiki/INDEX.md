@@ -5,31 +5,35 @@
 
 ## 📌 Next Session TODO (2026-04-20 세션 3회 핸드오프)
 
-### 🔹 Next Session 3 — Role-scoped distillation autopilot (**시작 지점**, 세션 2에서 결정·문서화 완료)
+### 🔹 Next Session — `omc-teams` 프로토타입 (2026-04-21 pivot)
 
-- **cwd**: `cd ~/robot/datafactory && claude` ⚠️ (**parent 아님, child에서 시작**)
-  - 이유: parent `~/robot/.mcp.json`는 없음. datafactory `.mcp.json`에 isaac-sim + ros-mcp — planner 세션에 도메인 MCP를 로드하려면 datafactory cwd 필요.
-  - SessionStart hook가 parent + child wiki 양쪽 모두 자동 주입.
-- **즉시 확인 파일**:
-  - `~/robot/datafactory/.omc/specs/deep-interview-robot-omc-role-scoped-distillation.md` — spec (ambiguity 18%, 5 라운드)
-  - `~/robot/datafactory/.omc/plans/robot-omc-role-scoped-distillation-plan.md` — plan iter2 + **session-2 amendments AM-1~5** (Architect+Critic APPROVE)
-  - `~/robot/datafactory/.omc/plans/open-questions.md` — 6 open
-- **✅ 세션 2에서 이미 결정된 것 (Plan Session-2 amendments에 기록)**:
-  - **AM-1 Schema**: OMC convention **γ (`disallowedTools:`)** 채택이 default. β(`tools:`)는 필요 시 allow-list 보조. α(`allowedTools:`)는 static evidence 0이라 기각.
-  - **AM-2 Agent 정의 위치**: `~/.claude/agents/` (유저 스코프) — 모든 robot child에서 발견, OMC 내장과 동급. `~/robot/.claude/agents/`는 발견 안 됨.
-  - **AM-3 세션 cwd**: `~/robot/datafactory/` (위 참조).
-  - **AM-4 AC-5 Case B 재정의**: 시스템 차단 불가 (isaac-sim이 세션에 로드). 정책은 **규율 기반** — planner 직접 호출 건수 audit (기대 0). 2회 위반 시 방식 Y(tmux pane) migration.
-  - **AM-5 Revisit trigger**: N-child 환경 또는 규율 위반 2회 → 방식 Y(`omc-teams` tmux) 마이그레이션 고려.
-- **시작 prompt** (autopilot 자동 재개):
-  ```
-  /oh-my-claudecode:autopilot --plan ~/robot/datafactory/.omc/plans/robot-omc-role-scoped-distillation-plan.md --skip-phase 0,1
-  ```
-  첫 행동: Phase A-0 empirical probe — 하지만 γ 채택 거의 확정이라 probe는 "γ가 실제 declaratively 작동함" 확인용 (α/β는 skip 가능).
-- **Open decision (세션 3 첫 turn에 사용자 확정 필요)**:
-  1. γ 단독 vs β+γ 병용 (2단계 방어 선호 여부)
-  2. `docker-operator` servant default 포함 여부 (open-questions #6)
-- **컨텍스트 절약 팁**: 세션 2 deep-interview / ralplan 전체 내용은 spec + plan에 응축. 새 세션은 위 3개 파일만 읽으면 재개 가능.
-- **autopilot Branch STOP 조건**: A-0에서 모든 schema가 silent이면 에스컬레이션 (plan).
+**배경**: Session 3에서 role-scoped distillation plan (frontmatter servant 방식)을 실행 시작(Phase A 완료, 커밋 `b01c61e`/`458de9b`) → Phase A-0 실측으로 세 가지 약점 확인:
+
+1. **Native ToolSearch**가 이미 세션 시작 context bloat을 상당 부분 커버 (distillation 핵심 근거 약화).
+2. **Servant 호출 per-call 오버헤드(~5k 토큰)**가 MCP 직접 호출(~200 토큰)보다 크게 비쌈 → short op 많은 워크로드에서 순손실.
+3. **User-scope agent**는 세션 내 hot-load 불가 — iteration UX 마찰.
+
+→ 사용자 결정: `omc-teams` (OS-level tmux pane 격리, OMC shipped skill) 프로토타입으로 **pivot**. Phase A 산출물 정리 완료 (parent `c3cf7c3`, datafactory `bda537f`).
+
+**다음 세션 할 일** (cwd 자유 — 우선 `cd ~/robot/datafactory && claude`):
+
+1. `/oh-my-claudecode:omc-teams` 스킬 doc 정독.
+2. 최소 프로토타입: 2-pane 팀 (planner pane + isaac-worker pane, 각 pane 자체 cwd + `.mcp.json`).
+3. 구체 태스크 1개 시험 — 예: Phase 1 smoke (`get_scene_info` + 10-line `execute_script` + `connect_to_robot` + `get_topics`).
+4. 측정: per-pane 토큰 사용량, UX 체감, tmux 운영 오버헤드.
+5. 판정:
+   - **우수** → omc-teams를 도메인 격리 메커니즘으로 확정, 아키텍처 doc 재작성.
+   - **열등** → Claude Code 네이티브(cwd-scoped `.mcp.json` + ToolSearch)만 사용, 격리 레이어 스킵. 도메인 작업에 직접 착수.
+
+**보존된 참조 자료**:
+- `~/robot/datafactory/.omc/specs/deep-interview-robot-omc-role-scoped-distillation.md` — 요구사항 레벨 spec (planner 연구 도구 유지, servant 도메인 MCP, return-value only). **omc-teams 구현에도 유효**.
+- `~/robot/datafactory/.omc/plans/open-questions.md` — 3개 generic domain research 항목만 남김 (Robosynx 라이선싱, ros-mcp fork 비교, Anthropic CC 이슈 #16177/#4476/#32514).
+- `~/robot/wiki/mcp_lessons.md` §2026-04-21 — user-scope agent hot-load 제약 (트러블슈팅 참조).
+
+**중단된 산출물 (git 히스토리에만 존재)**:
+- distillation plan `458de9b` → deleted `bda537f`
+- `omc_robot_profile.md` (10-section profile) `b01c61e` → deleted `c3cf7c3`
+- 3 servant agents (`~/.claude/agents/isaac-operator.md` 외) → user-scope 삭제 (git 무관)
 
 ### 🔹 Next Session 1 (DONE 2026-04-20) — Q2 스킬 생태계 Survey & 갭 분석
 - **cwd**: `cd ~/robot && claude`
@@ -57,8 +61,8 @@
   - `~/robot/.omc/research/skill-gap-analysis-<date>.md`
   - 필요 시 후속 세션용 spec 초안
 
-### 🔹 Next Session 2 (SUBSUMED → Session 3) — Q1 MCP 격리 가이드
-- 원 범위(서브에이전트 MCP 격리 3-way 우회 비교)는 Next Session 3의 `role-scoped distillation` spec에 흡수. `mcp_isolation.md` 단독 작성 대신, `omc_robot_profile.md` §9 scope schema branch record + `wiki/mcp_lessons.md` A-0 entry로 증류.
+### 🔹 Next Session 2 (SUBSUMED → Session 3, 이후 abandoned) — Q1 MCP 격리 가이드
+- 원 범위(서브에이전트 MCP 격리 3-way 우회 비교)는 Session 3 `role-scoped distillation` spec에 흡수 → 2026-04-21 해당 접근 abandoned. 관련 lesson(user-scope agent hot-load 제약)은 `wiki/mcp_lessons.md` §2026-04-21에 보존. 격리 자체는 `omc-teams` 프로토타입에서 재검토.
 
 ### 세션 진행 요령
 - 새 세션에서 SessionStart 훅이 이 INDEX.md 자동 주입 → 맥락 이어짐
