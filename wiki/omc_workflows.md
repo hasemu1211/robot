@@ -5,7 +5,7 @@
 ## 3-Stage 파이프라인 (권장)
 
 ```
-/oh-my-claudecode:brainstorm (또는 deep-interview)
+/oh-my-claudecode:deep-interview  (또는 superpowers:brainstorming)
   → 요구사항 크리스탈화 (Socratic Q&A, ambiguity ≤ 20%)
   → spec in .omc/specs/
 
@@ -22,20 +22,56 @@
 
 각 단계는 독립 실행 가능. 중간 결과물은 `.omc/{specs,plans,research}/`에 영속.
 
-## 주요 스킬 요약
+## 주요 스킬 요약 (2026-04-20 ecosystem survey 기준)
+
+### OMC 핵심 (Tier-0)
 
 | 스킬 | 용도 | 비고 |
 |---|---|---|
 | `/oh-my-claudecode:deep-interview` | Socratic 요구사항 인터뷰 | ambiguity 수학적 게이팅, 20% 이하면 proceed |
-| `/oh-my-claudecode:plan --consensus` | Ralplan 합의 계획 | Planner/Architect/Critic, 최대 5 iter |
+| `/oh-my-claudecode:plan --consensus` (alias `ralplan`) | 합의 계획 | Planner/Architect/Critic, 최대 5 iter |
 | `/oh-my-claudecode:autopilot` | 자율 end-to-end 실행 | Phase 0-5, cancel로 중단 가능 |
 | `/oh-my-claudecode:ralph` | Persistence loop with architect verify | acceptance criteria 달성까지 자율 |
-| `/oh-my-claudecode:team` | tmux teammate 병렬 실행 | `teammateMode: tmux` 필수 |
+| `/oh-my-claudecode:team` / `ultrawork` / `ccg` | 병렬 실행 계열 | tmux teammate 또는 다중모델 |
 | `/oh-my-claudecode:deepinit` | 계층적 AGENTS.md 생성 | 첫 세팅 시 |
 | `/oh-my-claudecode:mcp-setup` | MCP 서버 프로젝트별 격리 | 가이드 포함 |
 | `/oh-my-claudecode:wiki` | 위키 읽기/쓰기 | scope = 현재 cwd의 `wiki/` |
 | `/oh-my-claudecode:verify` | 완료 주장 검증 | 커밋 전 필수 |
+| `/oh-my-claudecode:trace` / `deep-dive` | 원인 추적 + 요구사항 합성 | sim/hardware 버그 |
+| `/oh-my-claudecode:remember` / `learner` / `skillify` | 지식 증류 | child→global 승격 판단, 세션→스킬 |
+| `/oh-my-claudecode:external-context` / `sciomc` | 병렬 조사 | document-specialist N개 병렬 |
+| `/oh-my-claudecode:ai-slop-cleaner` | LLM slop 정리 | 회귀 안전 삭제 우선 |
+| `/oh-my-claudecode:visual-verdict` | 스크린샷 비교 | Isaac 렌더 회귀 검사 |
 | `/oh-my-claudecode:cancel` | 모드 중단 | autopilot/ralph 등 |
+
+### superpowers 유니크 (OMC 대응 없음)
+
+| 스킬 | 용도 | 비고 |
+|---|---|---|
+| `superpowers:test-driven-development` | TDD | OMC에 TDD 전용 스킬 없음 → 유지 |
+| `superpowers:receiving-code-review` | 리뷰 수신 프로토콜 | OMC `code-reviewer` agent는 송신 쪽 |
+| `superpowers:finishing-a-development-branch` | 브랜치 종료 체크리스트 | `release`와 범위 다름 |
+| `superpowers:brainstorming` | 가벼운 explore | `deep-interview`가 더 엄격한 대안 |
+
+### Deprecated aliases (사용 금지)
+
+- `/oh-my-claudecode:brainstorm` → 존재 **안** 함 (INDEX.md에 Q2 노트).
+- `superpowers:brainstorm` → `superpowers:brainstorming`.
+- `superpowers:write-plan` → `superpowers:writing-plans`.
+- `superpowers:execute-plan` → `superpowers:executing-plans`.
+
+### MCP 서버 (이 레포 관련)
+
+| MCP | 상태 | 비고 |
+|---|---|---|
+| Isaac Sim MCP (port 8766) | 운영 | mcp 1.27 호환 패치 필요 (`mcp_lessons.md`) |
+| rosbridge (port 9090) | 운영 | ROS2 humble Docker 이미지 |
+| `context7` | 플러그인 | `resolve-library-id` / `query-docs` |
+| `github-mcp-server` | 운영 | issue/PR/repo |
+| Docker MCP Toolkit | **도입 후보** | `/plugin install docker-mcp-toolkit@docker` |
+| Exa MCP | **트라이얼 후보** | `/plugin marketplace add exa-labs/exa-mcp-server` |
+
+세부 shortlist: `wiki/ecosystem_survey.md`. 결정 근거: `.omc/research/skill-gap-analysis-20260420.md`.
 
 ## 2-Tier Wiki 패턴
 

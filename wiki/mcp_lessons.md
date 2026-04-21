@@ -100,27 +100,18 @@ DATAFACTORY는 `isaac-sim`(Isaac 제어) + `ros-mcp`(ROS2 통신) 두 MCP를 프
 
 향후 Docker MCP 등 추가 시에도 프로젝트 레벨 `.mcp.json`에만 선언하면 child 스코프 유지.
 
-## 2026-04-21 — Agent frontmatter scope enforcement probe (A-0)
+## 2026-04-21 — User-scope agent 파일은 세션 내 hot-load 불가
 
-**Plan:** `~/robot/datafactory/.omc/plans/robot-omc-role-scoped-distillation-plan.md` Phase A-0.
-**Decision (AM-6):** Schema **γ (`disallowedTools:`)** 단독 채택 (β+γ 기각).
+**Context**: 새 agent 정의를 `~/.claude/agents/*.md`에 mid-session으로 작성 후 `Task(subagent_type="<new-name>", ...)` 호출 시 → `Agent type '<new-name>' not found` 에러.
 
-### 실측 결과: 유저 스코프 agent는 **세션 내 hot-load 불가**
+**확인된 동작:**
+- 이용 가능 agent 목록은 **세션 시작 시 스캔된 상태로 frozen**. mid-session 추가 agent 파일은 미등록.
+- `/reload-plugins`는 플러그인/스킬/훅 리로드는 수행하나 **user-scope `~/.claude/agents/*.md`는 포함 안 함**.
+- 상위 project-scope(`~/robot/.claude/agents/`)도 동일할 가능성 높음 — 세션 시작 이전에 disk에 존재해야 함.
 
-- 세션 3 중 `~/.claude/agents/probe-scope-gamma.md`를 생성하고 즉시 `Agent(subagent_type="probe-scope-gamma", ...)` 호출 → `Agent type 'probe-scope-gamma' not found` 에러.
-- 이용 가능 목록에는 기존 OMC + 내장 agent 25개만 등록. 새로 쓴 파일은 미등록.
-- `/reload-plugins`는 플러그인/스킬/훅은 리로드하나 **유저 스코프 `~/.claude/agents/*.md`는 세션 시작 시에만 스캔**.
+**실행 지침:**
+- 새 agent 정의 추가/수정 시 **세션 재시작 필수**.
+- CI-유사 자동화에서 agent 정의를 runtime으로 주입하는 접근은 작동 안 함 — bootstrap 시 저장소에 커밋된 상태로 세션 시작 필요.
+- tmux pane 기반(`omc-teams`) 분리 메커니즘에는 이 제약 해당 없음 — 각 pane이 자체 세션이므로 pane 재시작이 "세션 재시작"과 등가.
 
-### 함의
-
-1. **AM-2 가정 부분 수정**: 유저 스코프는 "발견된다"가 맞지만, **"mid-session 추가는 반영 안 됨"**. Phase A-1에서 agent 파일을 작성해도 동일 세션에서 Phase B(스코프 위반 probe)를 실행 **불가능**. Phase B는 반드시 새 세션에서 수행.
-2. **γ 선언적 차단 empirical 확인은 Phase B-2 Case A/C(servant invocation)에서 일어남**, A-0는 아님. A-0의 static evidence(OMC shipped agent 8/8 = γ)가 선언적 차단에 대한 **간접 증거**로 유지.
-3. **상위 경로(`~/robot/.claude/agents/`)도 동일**할 것으로 추정 — 모든 agent 정의는 세션 시작 전 disk에 존재해야 함.
-
-### 실행 지침
-
-- Phase A에서 agent 정의 작성 + atomic commit → 세션 종료 → 새 세션(`cd ~/robot/datafactory && claude`)에서 Phase B 실행.
-- 유저가 agent 정의 수정 시 **매번 세션 재시작 필요**하다고 `omc_robot_profile.md` §Troubleshooting에 경고 추가.
-
-### Promotion worthiness
-**Promotion-worthy**: 이 동작은 공식 문서에 명시 안 됨 + 여러 session-2 가정에 영향. 이후 `wiki/` → project level로 승격 가치 있음.
+**공식 문서 언급 부재** — 트러블슈팅 시 참조용으로 남김.

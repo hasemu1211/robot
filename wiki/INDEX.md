@@ -81,7 +81,6 @@
 - [OMC 워크플로우](omc_workflows.md) — deepinit/plan/autopilot 파이프라인, 2-Tier wiki, tmux teammate 모드
 - [MCP 교훈](mcp_lessons.md) — mcp 1.27.0 호환성 패치, MCP extension 활성화 방식, 서버 디버깅
 - [생태계 Survey 2026-04-20](ecosystem_survey.md) — T1–T5 플러그인/스킬/MCP 카탈로그 + shortlist (Q2 산출물, 세부 근거는 `.omc/research/skill-gap-analysis-20260420.md`)
-- [OMC Robot Profile](omc_robot_profile.md) — Planner/Servant 역할 경계 + 3-Layer 구조 + 서번트 매트릭스 (AC-4 산출물, 세션 3~ Phase A–D)
 
 ## 승격 규칙 (promotion) — Child → Global
 
