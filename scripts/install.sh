@@ -846,6 +846,21 @@ run_claude() {
   merge_settings
   link_commands
   handle_secrets
+
+  # Register github-mcp-server (idempotent via claude mcp add)
+  if command -v claude &>/dev/null; then
+    if dry "claude mcp add github-mcp-server -s user -- npx -y @modelcontextprotocol/server-github"; then
+      :
+    else
+      if claude mcp list 2>/dev/null | grep -q "github-mcp-server"; then
+        log_skip "github-mcp-server already registered in user scope"
+      else
+        claude mcp add github-mcp-server -s user -- npx -y @modelcontextprotocol/server-github \
+          && log_ok "github-mcp-server registered in user scope" \
+          || log_warn "github-mcp-server registration failed"
+      fi
+    fi
+  fi
 }
 
 # ------------------------------------------------------------------------------
@@ -988,6 +1003,19 @@ main() {
   for l in "${targets[@]}"; do
     if ! run_layer "$l"; then
       log_fail "aborting after layer '$l' failure — re-run with --resume after fixing"
+      exit 1
+    fi
+  done
+
+  if [[ $FLAG_DRY_RUN -eq 1 ]]; then
+    log_ok "dry-run complete (0 files written)"
+  else
+    log_ok "install complete"
+  fi
+}
+
+main "$@"
+with --resume after fixing"
       exit 1
     fi
   done

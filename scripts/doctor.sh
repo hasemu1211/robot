@@ -320,6 +320,13 @@ check_cli() {
       record_check cli rtk "warn" "rtk ${rtk_ver} installed but hook not registered — run 'rtk init -g --auto-patch'"
     fi
   fi
+
+  # cli.notebooklm
+  if command -v notebooklm &>/dev/null; then
+    record_check cli notebooklm green "$(notebooklm --version 2>/dev/null | head -1 || echo present)"
+  else
+    record_check cli notebooklm warn "notebooklm not found — opt-in via install.sh (no --skip-notebooklm)"
+  fi
 }
 
 # ---------------------------------------------------------------------------
@@ -603,9 +610,72 @@ check_datafactory() {
 }
 
 # ---------------------------------------------------------------------------
+# Layer: mcp
+# ---------------------------------------------------------------------------
+check_mcp() {
+  # mcp.github-mcp-server — check if registered in claude mcp list
+  local github_status github_msg
+  if command -v claude &>/dev/null; then
+    if claude mcp list 2>/dev/null | grep -q "github-mcp-server"; then
+      github_status="green"
+      github_msg="github-mcp-server registered in user scope"
+    else
+      github_status="warn"
+      github_msg="github-mcp-server not registered — run install.sh --step=claude"
+    fi
+  else
+    github_status="fail"
+    github_msg="claude CLI not found"
+  fi
+  record_check mcp github-mcp-server "$github_status" "$github_msg"
+
+  # mcp.plugins — check 4 required plugins
+  local plugins=(
+    "context7@claude-plugins-official"
+    "superpowers@claude-plugins-official"
+    "skill-creator@claude-plugins-official"
+    "oh-my-claudecode@omc"
+  )
+  local missing_plugins=()
+  local settings_file="$HOME/.claude/settings.json"
+  if [[ -f "$settings_file" ]]; then
+    for p in "${plugins[@]}"; do
+      if ! jq -e --arg p "$p" '.enabledPlugins[$p] == true' "$settings_file" &>/dev/null; then
+        missing_plugins+=("$p")
+      fi
+    done
+  else
+    missing_plugins=("${plugins[@]}")
+  fi
+
+  if [[ ${#missing_plugins[@]} -eq 0 ]]; then
+    record_check mcp plugins green "all 4 distribution plugins enabled"
+  else
+    record_check mcp plugins warn "missing/disabled plugins: ${missing_plugins[*]}"
+  fi
+
+  # mcp.parent-mcp-json — check ~/robot/.mcp.json existence and valid JSON
+  local parent_mcp="${ROBOT_ROOT}/.mcp.json"
+  local pmcp_status pmcp_msg
+  if [[ -f "$parent_mcp" ]]; then
+    if jq empty "$parent_mcp" &>/dev/null; then
+      pmcp_status="green"
+      pmcp_msg="~/robot/.mcp.json present and valid"
+    else
+      pmcp_status="fail"
+      pmcp_msg="~/robot/.mcp.json is invalid JSON"
+    fi
+  else
+    pmcp_status="warn"
+    pmcp_msg="~/robot/.mcp.json not found — github-mcp-server might be missing config"
+  fi
+  record_check mcp parent-mcp-json "$pmcp_status" "$pmcp_msg"
+}
+
+# ---------------------------------------------------------------------------
 # Run checks
 # ---------------------------------------------------------------------------
-ALL_LAYERS=( host dotfiles cli claude vendor secrets templates datafactory )
+ALL_LAYERS=( host dotfiles cli claude mcp vendor secrets templates datafactory )
 
 run_layer() {
   local layer="$1"
@@ -614,6 +684,7 @@ run_layer() {
     dotfiles)    check_dotfiles ;;
     cli)         check_cli ;;
     claude)      check_claude ;;
+    mcp)         check_mcp ;;
     vendor)      check_vendor ;;
     secrets)     check_secrets ;;
     templates)   check_templates ;;

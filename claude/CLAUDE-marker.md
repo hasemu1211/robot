@@ -29,6 +29,7 @@
 - NGC 토큰 등 비밀은 `.env.local` (gitignored) + shell env `--env-from-shell` 양쪽 지원
 
 **관련 문서**
+- `~/robot/wiki/agent_cookbook.md` — **(필독)** 실제 toolbox 카탈로그 + 레시피 + 관례
 - `~/robot/docs/INSTALL.md` — install.sh 레이어별 상세
 - `~/robot/docs/HOST_PREREQUISITES.md` — OS + Docker + NVIDIA 준비
 - `~/robot/docs/MERGE_DOTFILES.md` — 기존 dotfiles와의 통합 절차

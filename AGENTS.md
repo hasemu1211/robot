@@ -67,6 +67,7 @@ claude                                    # 2-Tier wiki 자동 로드
 ## 외부 의존
 
 - `oh-my-claudecode`: 멀티 에이전트 오케스트레이션 (`deepinit`, `plan`, `autopilot`, `wiki`, `mcp-setup`, `remember`)
+- [Agent Cookbook](wiki/agent_cookbook.md) — **(필독)** 실제 toolbox 카탈로그 + 레시피 + 관례
 - `superpowers`: `brainstorming`, `writing-plans`, `tdd`, `verification-before-completion`
 - `context7`: 외부 API 문서 조회 (Isaac Sim, ROS2, NumPy 등)
 - `rtk`: Claude Code Bash 훅 토큰 압축 (install.sh cli 레이어에 포함)

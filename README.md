@@ -110,6 +110,7 @@ cd myrobot && docker compose --profile streaming up -d
 
 - **OS**: Ubuntu 22.04 strict (24.04는 `--force-os`로 시도 가능, 미검증)
 - **GPU**: NVIDIA (compute capability ≥ sm_86, VRAM ≥ 8GB 권장). Isaac Sim 제외 시 NVIDIA 불필요
+- **시각화**: `isaacsim-webrtc-streaming-client-*.AppImage` (NVIDIA 제공, 사용자 별도 준비 필요)
 - **기타**: Node.js 20+, tmux 3.2+, Docker 24+, jq, xclip, xsel, libfuse2
 - **NGC 계정**: `docker login nvcr.io` (Isaac Sim 이미지 pull용)
 
@@ -161,3 +162,4 @@ install.sh는 기본 `backup → symlink` (기존 파일을 `<file>.pre-robot.<t
 ## 라이선스
 
 MIT (이 레포). 포함된 `vendor/isaac-sim-mcp/` fork의 라이선스는 원본 upstream 준수.
+m 준수.

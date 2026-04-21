@@ -14,6 +14,7 @@
 
 ### OMC 워크플로우 & 생태계
 
+- [Agent Cookbook](agent_cookbook.md) — **(필독)** 실제 설정된 toolbox 카탈로그, 레시피, 관례 및 주의사항
 - [OMC 워크플로우](omc_workflows.md) — deepinit/plan/autopilot 파이프라인, 2-Tier wiki, tmux teammate 모드
 - [생태계 Survey](ecosystem_survey.md) — T1-T5 플러그인·스킬·MCP 카탈로그 (2026-04)
 
