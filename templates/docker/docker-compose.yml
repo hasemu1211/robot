@@ -1,0 +1,95 @@
+# robot distribution — child Docker compose template.
+#
+# Substitution contract (bootstrap-child.sh applies at child creation):
+#   ${COMPOSE_PROJECT_NAME}  → child directory name (e.g., "myproject")
+#   ${ROBOT_ROOT}            → resolved by scripts (git rev-parse --show-toplevel or $ROBOT_ROOT env)
+#
+# Runtime env (set in .env sibling or shell):
+#   ROS_DISTRO               → ROS 2 distribution tag (default: humble)
+#   RMW_IMPLEMENTATION       → DDS impl (default: rmw_fastrtps_cpp)
+#   ROS_DOMAIN_ID            → DDS domain (default: 0)
+#   DATA_DIR                 → host data volume (default: ../data)
+#
+# Lesson: container_name hardcode + dual-path symlink causes "container name already in use"
+# collision when compose is run from BOTH real path and symlink path (same physical dir, 2 names).
+# Fix: ${COMPOSE_PROJECT_NAME} parameterization + run compose only from real path.
+
+services:
+
+  # ── ROS2 (검증 노드) — rosbridge 9090 제공 ─────────────────────────────
+  # Phase 4 시공간 동기화 / Isaac ROS2 bridge 상대역. `--profile ros2`로 활성.
+  ros2:
+    build:
+      context: .
+      dockerfile: Dockerfile.ros2
+    container_name: ${COMPOSE_PROJECT_NAME}_ros2
+    profiles: ["ros2"]
+    network_mode: host
+    ipc: host
+    stdin_open: true
+    tty: true
+    environment:
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
+    volumes:
+      - ${DATA_DIR:-../data}:/data
+      - ./ros2_ws:/ros2_ws
+    command: >
+      bash -c "source /opt/ros/${ROS_DISTRO:-humble}/setup.bash &&
+               ros2 launch rosbridge_server rosbridge_websocket_launch.xml &
+               exec bash"
+
+  # ── Isaac Sim 스트리밍 모드 (WebRTC 시각 확인용) ──────────────────────
+  # WebRTC Streaming Client AppImage → 127.0.0.1:49100 접속.
+  # MCP extension TCP 리스너: 8766.
+  isaac-sim-streaming:
+    image: nvcr.io/nvidia/isaac-sim:4.5.0
+    container_name: ${COMPOSE_PROJECT_NAME}_isaac_sim
+    profiles: ["streaming"]
+    runtime: nvidia
+    network_mode: host
+    ipc: host
+    stdin_open: true
+    tty: true
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,graphics,utility
+      - ACCEPT_EULA=Y
+      - ROS_DISTRO=${ROS_DISTRO:-humble}
+      - RMW_IMPLEMENTATION=${RMW_IMPLEMENTATION:-rmw_fastrtps_cpp}
+      - LD_LIBRARY_PATH=/isaac-sim/exts/isaacsim.ros2.bridge/${ROS_DISTRO:-humble}/lib
+    volumes:
+      - ${DATA_DIR:-../data}:/data
+      - ../config:/config
+      - isaac_cache:/root/.cache/ov
+      - ${ROBOT_ROOT}/vendor/isaac-sim-mcp:/opt/isaac-sim-mcp:ro
+      - ./isaacsim.streaming.mcp.kit:/opt/kit/isaacsim.streaming.mcp.kit:ro
+      - ./entrypoint-mcp.sh:/entrypoint-mcp.sh:ro
+      - ./enable_mcp.py:/opt/kit/enable_mcp.py:ro
+    # 포트 49100 (WebRTC signaling, WebSocket), 8766 (MCP TCP) — network_mode: host 자동 노출
+    entrypoint: ["/bin/sh", "/entrypoint-mcp.sh"]
+    command: []
+
+  # ── Isaac Sim Headless 모드 (배치 데이터 생성용) ──────────────────────
+  # `--profile headless`. python.sh + generate.py 패턴. 사용자가 /data/scripts/generate.py 제공.
+  isaac-sim-headless:
+    image: nvcr.io/nvidia/isaac-sim:4.5.0
+    container_name: ${COMPOSE_PROJECT_NAME}_isaac_sim
+    profiles: ["headless"]
+    runtime: nvidia
+    network_mode: host
+    ipc: host
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,graphics,utility
+      - ACCEPT_EULA=Y
+      - RMW_IMPLEMENTATION=${RMW_IMPLEMENTATION:-rmw_fastrtps_cpp}
+      - LD_LIBRARY_PATH=/isaac-sim/exts/isaacsim.ros2.bridge/${ROS_DISTRO:-humble}/lib
+    volumes:
+      - ${DATA_DIR:-../data}:/data
+      - ../config:/config
+      - isaac_cache:/root/.cache/ov
+    command: ["/isaac-sim/python.sh", "/data/scripts/generate.py"]
+
+volumes:
+  isaac_cache:
+    driver: local

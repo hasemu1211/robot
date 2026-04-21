@@ -1,0 +1,25 @@
+{
+  "_comment": "robot distribution child MCP seed. bootstrap-child.sh substitutes ${ROBOT_ROOT}. isaac-sim requires vendor/isaac-sim-mcp submodule checked out (see Phase B in robot-distribution-plan.md).",
+  "mcpServers": {
+    "isaac-sim": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "--directory",
+        "${ROBOT_ROOT}/vendor/isaac-sim-mcp",
+        "run",
+        "isaac_mcp/server.py"
+      ],
+      "env": {}
+    },
+    "ros-mcp": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "ros-mcp",
+        "--transport=stdio"
+      ],
+      "env": {}
+    }
+  }
+}

@@ -1,0 +1,115 @@
+# ${PROJECT_NAME} — Project Instructions
+
+> Child of `~/robot/`. Global knowledge: `~/robot/wiki/`. Project-local: `./wiki/`.
+> SessionStart 훅이 parent + local wiki 자동 주입.
+
+## 개요
+
+<!-- 프로젝트 목적·범위·V&V 기준 -->
+
+## 하드웨어·환경
+
+<!-- GPU 모델, VRAM, RAM, 디스크 여유, OS (Ubuntu 22.04 가정) -->
+
+## Phase 현황
+
+| Phase | 내용 | 상태 |
+|---|---|---|
+| 1 | 환경 구축 (Docker + Isaac Sim + MCP + ROS2) | 미시작 |
+| 2 | <!-- 도메인 고유 Phase 2 --> | 미시작 |
+| 3 | <!-- 도메인 고유 Phase 3 --> | 미시작 |
+
+## 시작 방법
+
+```bash
+cd ~/robot/${PROJECT_NAME}
+claude                                  # 2-Tier wiki 자동 로드
+
+# Isaac Sim + MCP (streaming profile)
+cd docker && docker compose --profile streaming up -d
+
+# ROS2 + rosbridge 9090 (선택)
+docker compose --profile ros2 up -d ros2
+```
+
+**준비 완료 확인:**
+- Isaac Sim: `docker logs ${COMPOSE_PROJECT_NAME}_isaac_sim 2>&1 | grep "Isaac Sim MCP server"` → `localhost:8766`
+- ROS2: `docker exec ${COMPOSE_PROJECT_NAME}_ros2 bash -c "source /opt/ros/humble/setup.bash && ros2 topic list"`
+
+### WebRTC 시각 확인
+
+```bash
+# 프로젝트 루트의 AppImage (사용자 제공)
+./isaacsim-webrtc-streaming-client-*.AppImage
+# → 서버 주소 127.0.0.1 → Connect
+```
+
+포트: `49100` (WebSocket signaling, HTTP 아님) / `8766` (MCP TCP).
+
+## MCP 서버 (.mcp.json)
+
+`${ROBOT_ROOT}/templates/.mcp.json.tmpl` 치환본 (bootstrap-child가 생성):
+
+### isaac-sim (포트 8766)
+| 도구 | 용도 |
+|---|---|
+| `get_scene_info()` | 연결 확인 — **항상 먼저 호출** |
+| `create_physics_scene(objects, floor, gravity)` | 물리 씬 + 오브젝트 |
+| `execute_script(code)` | Isaac Sim Python API |
+| `create_robot(robot_type, position)` | 로봇 스폰 |
+| `transform(path, position, rotation)` | prim 위치/회전 |
+
+### ros-mcp (포트 9090 = rosbridge)
+| 도구 | 용도 |
+|---|---|
+| `connect_to_robot(ip="127.0.0.1", port=9090)` | rosbridge 연결 — **항상 먼저 호출** |
+| `get_topics()` / `subscribe_once()` / `publish_once()` / `call_service()` | ROS2 상호작용 |
+
+## Isaac Sim 4.5.0 API (execute_script 작성 시)
+
+```python
+# ✓ 신 API (4.5.0)
+from isaacsim.core.api import World
+from isaacsim.core.prims import XFormPrim
+from isaacsim.core.utils.nucleus import get_assets_root_path
+from isaacsim.core.utils.prims import create_prim
+from isaacsim.core.utils.stage import add_reference_to_stage
+```
+
+상세: `~/robot/wiki/isaac_sim_api_patterns.md`.
+
+## 코딩 원칙 (도메인별로 커스터마이즈)
+
+- <!-- 예: 결과는 수식으로 표현 (Δt, K, R|t, ε, U(a,b)) -->
+- <!-- 예: Isaac Sim Headless 해상도 640×480 우선 -->
+
+## 도구
+
+- `context7` — 외부 API 문서 조회
+- `superpowers` — TDD, 디버깅, 코드 리뷰 워크플로우
+- `oh-my-claudecode` — 멀티 에이전트 오케스트레이션
+- Parent `~/robot/external/robotics-agent-skills/*` — 9개 로봇 스킬 (심링크 주입 방법: `docs/ROBOTICS_SKILLS.md`)
+
+## 핵심 파일
+
+```
+${PROJECT_NAME}/
+├── docker/
+│   ├── docker-compose.yml         # ${COMPOSE_PROJECT_NAME}_* 파라미터화
+│   ├── .env                       # ROS_DISTRO, DATA_DIR 등
+│   ├── Dockerfile.ros2
+│   ├── entrypoint-mcp.sh
+│   ├── enable_mcp.py
+│   └── isaacsim.streaming.mcp.kit
+├── .mcp.json                      # isaac-sim + ros-mcp (${ROBOT_ROOT} 치환)
+├── AGENTS.md                      # 본 파일
+└── wiki/
+    ├── INDEX.md                   # 세션 시작 시 자동 로드
+    └── lessons_*.md
+```
+
+## 메모리
+
+- `wiki/INDEX.md` — 세션 시작 시 자동 주입 (parent + local 2-Tier)
+- `~/.claude/projects/<hash>/memory/` — Claude Code auto-memory (머신 local, type별)
+- `.omc/notepad.md` — 일시 메모 (gitignored)
