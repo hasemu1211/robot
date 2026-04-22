@@ -135,6 +135,17 @@
 - **ROS2 direct-rclpy MCP** — rosbridge 레이턴시 병목 시.
 - **Kubernetes MCP** — child가 k8s 배포하면.
 
+### Robotics MCP 대체 후보 (2026-04 datafactory 조사 발췌)
+
+현재 스택(`omni-mcp/isaac-sim-mcp` + PyPI `ros-mcp` 3.0.1 ← `robotmcp/ros-mcp-server`)의 대안으로 검토 후보. 업스트림 활성도·API 안정성은 도입 전 직접 확인 필요 (이 목록은 타 프로젝트 기획 문서 발췌 — citation 게이트 미통과).
+
+- **`nullbyte91/nvidia-isaac-mcp`** — `execute_script` 통짜 주입 대신 `get_prim_info`, `create_prim` 등 CRUD 분해. 컨텍스트 오버헤드 절감 주장. 4.5.0 API 호환 여부 검증 요.
+- **`whats2000/isaacsim-mcp-server`** — `omni-mcp` 의 fork. Jetbot/Franka 등 사전 정의 자산 + 시뮬→에이전트 피드백 루프 지향.
+- **`wise-vision/ros2_mcp`** — Topic/Service/Action discovery + 고수준 오케스트레이션 지향. rosbridge 레이어 없이 직접 브리지.
+- **`philschmid/mcp-cli`** — MCP 도구 지연 로딩 (lazy). 세션 시작 시 스키마 로드 토큰 절감 + 에이전트 없이 MCP 서버 독립 테스트.
+
+Skip 기존 결정 유지: `mcp-debug-tools` — 로보틱스 환경에서 오버헤드 과다.
+
 ### Skip
 
 - **Perplexity MCP** — canonical 구현 없음.
