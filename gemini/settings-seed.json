@@ -1,0 +1,6 @@
+{
+  "_description": "robot distribution — ~/.gemini/settings.json seed. install.sh gemini layer merges recursively with user's existing file. security.auth is NEVER seeded (user sets via `gemini` first-run OAuth). Remove _description before consumption.",
+  "general": {
+    "previewFeatures": true
+  }
+}

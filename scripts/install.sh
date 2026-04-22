@@ -91,8 +91,8 @@ for arg in "$@"; do
 done
 
 case "$FLAG_STEP" in
-  ""|host|dotfiles|cli|claude|vendor|child) ;;
-  *) echo "ERROR: invalid --step=$FLAG_STEP (allowed: host|dotfiles|cli|claude|vendor|child)" >&2; exit 2 ;;
+  ""|host|dotfiles|cli|claude|gemini|vendor|child) ;;
+  *) echo "ERROR: invalid --step=$FLAG_STEP (allowed: host|dotfiles|cli|claude|gemini|vendor|child)" >&2; exit 2 ;;
 esac
 
 # ------------------------------------------------------------------------------
@@ -220,6 +220,12 @@ compute_layer_sha() {
         done
       } | sha256sum | awk '{print $1}'
       ;;
+    gemini)
+      {
+        sha256sum "$ROBOT_ROOT/gemini/settings-seed.json" 2>/dev/null || echo "missing seed"
+        printf 'omg-extension:v0.8.1\n'
+      } | sha256sum | awk '{print $1}'
+      ;;
     vendor)
       if [[ -f "$ROBOT_ROOT/.gitmodules" ]]; then
         sha256sum "$ROBOT_ROOT/.gitmodules" | awk '{print $1}'
@@ -264,7 +270,7 @@ mark_fail() {
 # ------------------------------------------------------------------------------
 # Layer list + ordering
 # ------------------------------------------------------------------------------
-LAYERS=(host dotfiles cli claude vendor child)
+LAYERS=(host dotfiles cli claude gemini vendor child)
 
 # Determine resume start layer from most recent .fail (in LAYERS order).
 resume_start_layer() {
@@ -864,6 +870,102 @@ run_claude() {
 }
 
 # ------------------------------------------------------------------------------
+# Layer: gemini  (CLI check + OMG extension + settings seed + trustedFolders)
+# ------------------------------------------------------------------------------
+run_gemini() {
+  log_info "== gemini layer =="
+
+  # Step 1: Gemini CLI presence
+  if ! command -v gemini &>/dev/null; then
+    log_warn "gemini CLI not found — install manually: npm install -g @google/gemini-cli"
+    log_warn "skip: gemini layer requires the CLI; re-run after install"
+    return 0
+  fi
+  local gver; gver="$(gemini --version 2>/dev/null | head -1)"
+  log_ok "gemini CLI present (version=$gver)"
+
+  # Step 2: OMG extension at pinned version
+  local omg_dir="$HOME/.gemini/extensions/oh-my-gemini-cli"
+  local omg_manifest="$omg_dir/gemini-extension.json"
+  local target_version="0.8.1"
+  local omg_url="https://github.com/Joonghyun-Lee-Frieren/oh-my-gemini-cli"
+
+  if [[ -f "$omg_manifest" ]]; then
+    local cur_ver; cur_ver="$(jq -r .version "$omg_manifest" 2>/dev/null || echo unknown)"
+    if [[ "$cur_ver" == "$target_version" ]]; then
+      log_skip "oh-my-gemini-cli v$cur_ver already installed (target v$target_version)"
+    else
+      log_warn "oh-my-gemini-cli v$cur_ver installed; target v$target_version (upgrade manually: gemini extensions update oh-my-gemini-cli)"
+    fi
+  else
+    if dry "gemini extensions install $omg_url"; then
+      :
+    elif confirm "Install oh-my-gemini-cli extension now?"; then
+      gemini extensions install "$omg_url" \
+        && log_ok "oh-my-gemini-cli installed (version $(jq -r .version "$omg_manifest" 2>/dev/null || echo unknown))" \
+        || log_warn "gemini extensions install failed — install manually"
+    else
+      log_skip "extension install declined"
+    fi
+  fi
+
+  # Step 3: settings-seed merge (auth-preserving)
+  local gem_settings="$HOME/.gemini/settings.json"
+  local gem_seed="$ROBOT_ROOT/gemini/settings-seed.json"
+
+  if [[ ! -f "$gem_seed" ]]; then
+    log_warn "gemini seed missing: $gem_seed"
+  elif ! command -v jq &>/dev/null; then
+    log_fail "jq required for settings merge (run host layer first)"
+  else
+    mkdir -p "$HOME/.gemini"
+    local seed_clean; seed_clean="$(jq 'del(._description)' "$gem_seed")"
+    if [[ ! -f "$gem_settings" ]]; then
+      if dry "write $gem_settings (seed-only)"; then
+        :
+      else
+        printf '%s\n' "$seed_clean" > "$gem_settings"
+        log_ok "created $gem_settings from seed"
+      fi
+    else
+      # Never overwrite user's security.auth. Deep-merge seed into existing.
+      if dry "deep-merge seed into $gem_settings (preserve security.auth)"; then
+        :
+      else
+        local bak="${gem_settings}.pre-robot.${TS}.bak"
+        cp "$gem_settings" "$bak"
+        local merged; merged="$(jq -s '.[0] * .[1]' "$gem_settings" "$gem_seed" | jq 'del(._description)')"
+        if [[ -n "$merged" ]] && echo "$merged" | jq empty 2>/dev/null; then
+          printf '%s\n' "$merged" > "$gem_settings"
+          log_ok "merged seed into $gem_settings (backup: $bak)"
+        else
+          log_warn "merge produced invalid JSON — kept original, backup $bak preserved"
+        fi
+      fi
+    fi
+  fi
+
+  # Step 4: trustedFolders registration
+  local trust="$HOME/.gemini/trustedFolders.json"
+  if command -v jq &>/dev/null; then
+    mkdir -p "$HOME/.gemini"
+    local entry="$ROBOT_ROOT"
+    if [[ -f "$trust" ]] && jq -e --arg k "$entry" '.[$k]' "$trust" &>/dev/null; then
+      log_skip "trustedFolders already has $entry"
+    else
+      if dry "add $entry to $trust as TRUST_FOLDER"; then
+        :
+      else
+        local base="{}"
+        [[ -f "$trust" ]] && base="$(cat "$trust")"
+        printf '%s' "$base" | jq --arg k "$entry" '. + {($k): "TRUST_FOLDER"}' > "$trust"
+        log_ok "registered $entry in $trust"
+      fi
+    fi
+  fi
+}
+
+# ------------------------------------------------------------------------------
 # Layer: vendor  (submodule verification — info only)
 # ------------------------------------------------------------------------------
 run_vendor() {
@@ -954,6 +1056,7 @@ run_layer() {
       dotfiles) run_dotfiles ;;
       cli)      run_cli ;;
       claude)   run_claude ;;
+      gemini)   run_gemini ;;
       vendor)   run_vendor ;;
       child)    run_child ;;
       *) log_fail "unknown layer: $layer"; exit 1 ;;
