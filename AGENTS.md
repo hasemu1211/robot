@@ -22,7 +22,7 @@ _아직 등록된 child 없음. `./scripts/bootstrap-child.sh <name> --profile=i
 ├── claude/                       # ~/.claude 주입 소스 (marker-based)
 ├── dotfiles/                     # wezterm, tmux, xprofile (심링크 소스)
 ├── templates/                    # child 생성용 파라미터화 템플릿 (docker, .mcp.json, AGENTS.md)
-├── vendor/                       # submodule (patched isaac-sim-mcp)
+├── vendor/                       # submodule (isaac-sim-mcp @ omni-mcp)
 ├── external/                     # submodule (3rd-party robotics-agent-skills)
 ├── wiki/                         # 🌐 global KB (Isaac / ROS2 / MCP / OMC / 호스트 교훈)
 ├── docs/                         # distribution 사용자 문서 (INSTALL / HOST_PREREQUISITES / ...)
@@ -58,11 +58,24 @@ claude                                    # 2-Tier wiki 자동 로드
 
 ## Distribution 도구
 
-- **install.sh** — 전체 distribution 레이어 설치 (host/dotfiles/cli/claude/vendor/child)
+- **install.sh** — 전체 distribution 레이어 설치 (host/dotfiles/cli/claude/gemini/vendor/child)
 - **doctor.sh** — 레이어 검증 (human + `--json`)
 - **merge-dotfiles.sh** — 기존 dotfile과 대화형 통합
 - **bootstrap-child.sh** — child scaffold + Docker 템플릿 치환
 - **promote.sh** — child wiki → global wiki 승격
+
+## Curator workflow
+
+이 레포의 관리자 역할(외부 환경 감사 → parent 도입 결정)은 `curator-adoption-audit` 스킬이 담당합니다. description-based auto-load 가 실패해도 아래 정보만으로 다음 curator 세션이 재개 가능합니다.
+
+- **스킬 본문**: `.omc/skills/curator-adoption-audit.md` (v2, 180 lines) — Gemini-untrusted-input · Tier A/B/C/D 분류 · 증거 규칙
+- **슬래시 커맨드 진입**: `/curator-audit <src> [--scope=mcp,gemini,claude,skill,submodule]`
+- **행동 규칙 (스킬 본문 §실행 단위 분할 / §Install-Doctor 대칭 / §재감사 루프)**:
+  - entity 당 **atomic 커밋** (submodule 1개 = 커밋 1개, 한 덩어리로 묶지 말 것)
+  - `install.sh` 레이어 추가 시 `doctor.sh check_<name>()` **동반 수정** (처방-측정 대칭)
+  - Tier B 실행 직후 `wiki/INDEX.md` · `.gitignore` · 주석 등에서 **stale 레퍼런스 재스캔**
+- **진행 중 TODO**: `.omc/plans/curator-tier-c-backlog-20260422.md` (C-1~C-4)
+- **검증 훅**: `scripts/hook-validate-edit.sh` 이 `.sh` syntax + `.md` frontmatter 를 자동 점검 (PostToolUse, 편집 차단 X)
 
 ## 외부 의존
 
