@@ -1,3 +1,6 @@
 [submodule "vendor/isaac-sim-mcp"]
 	path = vendor/isaac-sim-mcp
 	url = https://github.com/omni-mcp/isaac-sim-mcp.git
+[submodule "external/robotics-agent-skills"]
+	path = external/robotics-agent-skills
+	url = https://github.com/arpitg1304/robotics-agent-skills.git

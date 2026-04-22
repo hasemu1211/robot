@@ -34,8 +34,7 @@ __pycache__/
 # vendor/isaac-sim-mcp is now a real submodule (see .gitmodules).
 /datafactory
 
-# external/ — until submodule transition (Phase A-3)
-/external/robotics-agent-skills/
+# external/ is now a submodule path (see .gitmodules). No exclusion needed.
 
 # dotfiles backup files anywhere (already covered above, explicit for clarity)
 *.pre-rtk.*.bak
