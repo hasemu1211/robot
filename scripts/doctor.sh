@@ -6,7 +6,7 @@
 #   doctor.sh --layer=<name>   run only one layer's checks (human output)
 #   doctor.sh --layer=<name> --json  run one layer, JSON output
 #
-# Layers: host dotfiles cli claude vendor secrets templates datafactory
+# Layers: host dotfiles cli claude gemini mcp vendor secrets templates datafactory
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
@@ -46,7 +46,7 @@ for arg in "$@"; do
     --layer=*)        ONLY_LAYER="${arg#--layer=}" ;;
     -h|--help)
       echo "Usage: $0 [--json] [--layer=<name>]"
-      echo "Layers: host dotfiles cli claude vendor secrets templates datafactory"
+      echo "Layers: host dotfiles cli claude gemini mcp vendor secrets templates datafactory"
       exit 0
       ;;
     *)
@@ -401,6 +401,69 @@ check_claude() {
 }
 
 # ---------------------------------------------------------------------------
+# Layer: gemini
+# ---------------------------------------------------------------------------
+check_gemini() {
+  # gemini.cli — CLI presence + version
+  if ! command -v gemini &>/dev/null; then
+    record_check gemini cli fail "gemini CLI not found — run install.sh --step=gemini or install manually"
+    return 0
+  fi
+  local gver
+  gver="$(gemini --version 2>/dev/null | head -1 || echo unknown)"
+  record_check gemini cli green "gemini CLI present (version=${gver})"
+
+  # gemini.omg-extension — oh-my-gemini-cli installed at pinned v0.8.1
+  local omg_manifest="$HOME/.gemini/extensions/oh-my-gemini-cli/gemini-extension.json"
+  local target_version="0.8.1"
+  if [[ ! -f "$omg_manifest" ]]; then
+    record_check gemini omg-extension fail \
+      "oh-my-gemini-cli not installed (${omg_manifest} missing) — run install.sh --step=gemini"
+  else
+    local cur_ver
+    cur_ver="$(jq -r .version "$omg_manifest" 2>/dev/null || echo unknown)"
+    if [[ "$cur_ver" == "$target_version" ]]; then
+      record_check gemini omg-extension green "oh-my-gemini-cli v${cur_ver} (target v${target_version})"
+    else
+      record_check gemini omg-extension warn \
+        "oh-my-gemini-cli v${cur_ver} installed (target v${target_version}) — upgrade manually"
+    fi
+  fi
+
+  # gemini.settings — settings.json is valid JSON
+  local gem_settings="$HOME/.gemini/settings.json"
+  if [[ ! -f "$gem_settings" ]]; then
+    record_check gemini settings warn "${gem_settings} not found — run install.sh --step=gemini to seed"
+  elif ! jq empty "$gem_settings" &>/dev/null 2>&1; then
+    record_check gemini settings fail "${gem_settings} is not valid JSON"
+  else
+    local preview
+    preview="$(jq -r '.general.previewFeatures // false' "$gem_settings" 2>/dev/null)"
+    if [[ "$preview" == "true" ]]; then
+      record_check gemini settings green "settings.json valid; general.previewFeatures=true (seed applied)"
+    else
+      record_check gemini settings warn \
+        "settings.json valid but general.previewFeatures missing — re-run install.sh --step=gemini"
+    fi
+  fi
+
+  # gemini.trusted-folders — $ROBOT_ROOT registered as TRUST_FOLDER
+  local trust="$HOME/.gemini/trustedFolders.json"
+  if [[ ! -f "$trust" ]]; then
+    record_check gemini trusted-folders warn "${trust} not found — run install.sh --step=gemini"
+  else
+    local status
+    status="$(jq -r --arg k "$ROBOT_ROOT" '.[$k] // "missing"' "$trust" 2>/dev/null)"
+    if [[ "$status" == "TRUST_FOLDER" ]]; then
+      record_check gemini trusted-folders green "${ROBOT_ROOT} registered as TRUST_FOLDER"
+    else
+      record_check gemini trusted-folders warn \
+        "${ROBOT_ROOT} not in trustedFolders (status=${status}) — run install.sh --step=gemini"
+    fi
+  fi
+}
+
+# ---------------------------------------------------------------------------
 # Layer: vendor
 # ---------------------------------------------------------------------------
 check_vendor() {
@@ -675,7 +738,7 @@ check_mcp() {
 # ---------------------------------------------------------------------------
 # Run checks
 # ---------------------------------------------------------------------------
-ALL_LAYERS=( host dotfiles cli claude mcp vendor secrets templates datafactory )
+ALL_LAYERS=( host dotfiles cli claude gemini mcp vendor secrets templates datafactory )
 
 run_layer() {
   local layer="$1"
@@ -684,6 +747,7 @@ run_layer() {
     dotfiles)    check_dotfiles ;;
     cli)         check_cli ;;
     claude)      check_claude ;;
+    gemini)      check_gemini ;;
     mcp)         check_mcp ;;
     vendor)      check_vendor ;;
     secrets)     check_secrets ;;
@@ -760,7 +824,7 @@ emit_json() {
 # ---------------------------------------------------------------------------
 emit_human() {
   # Group checks by layer for ordered output
-  local ordered_layers=( host dotfiles cli claude vendor secrets templates datafactory )
+  local ordered_layers=( host dotfiles cli claude gemini mcp vendor secrets templates datafactory )
   if [[ -n "$ONLY_LAYER" ]]; then
     ordered_layers=( "$ONLY_LAYER" )
   fi
