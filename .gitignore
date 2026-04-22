@@ -31,8 +31,7 @@ __pycache__/
 .omc/logs/settings-merge-*.log
 
 # Legacy / local-only symlinks (user-specific).
-# The distribution uses submodules (vendor/, external/) instead — see docs/INSTALL.md Phase B.
-/isaac-sim-mcp
+# vendor/isaac-sim-mcp is now a real submodule (see .gitmodules).
 /datafactory
 
 # external/ — until submodule transition (Phase A-3)

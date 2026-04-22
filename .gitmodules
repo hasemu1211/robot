@@ -1,0 +1,3 @@
+[submodule "vendor/isaac-sim-mcp"]
+	path = vendor/isaac-sim-mcp
+	url = https://github.com/omni-mcp/isaac-sim-mcp.git
