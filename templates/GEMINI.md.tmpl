@@ -1,0 +1,40 @@
+# GEMINI.md — Gemini Project Specifics (${PROJECT_NAME})
+
+> **CRITICAL: 이 프로젝트의 모든 에이전트 조작은 \`AGENTS.md\`에 정의된 지침을 최우선으로 따릅니다.**
+> 글로벌 지침(\`~/robot/GEMINI.md\`)을 먼저 숙지하십시오.
+
+## 0. 핵심 지침 (Mandatory Mapping)
+- **Primary Source of Truth**: 모든 세션 시작 시 \`AGENTS.md\`를 로드하고, 그곳에 명시된 **Phase 현황**과 **코딩 원칙**을 엄격히 준수할 것.
+- **V&V 원칙**: 모든 결과 보고는 반드시 수식($\Delta t, K, R|t, \epsilon, U(a,b)$)과 지표로 표현하며, 정성적 표현은 배제함.
+- **API 지침**: Isaac Sim 4.5.0 전용 API(\`isaacsim.core.api\`)를 반드시 사용하며, 구버전 API(\`omni.isaac.core\`) 사용을 금지함.
+
+## 1. 프로젝트 컨테이너 정보
+- **Isaac Sim**: \`${COMPOSE_PROJECT_NAME}_isaac_sim\`
+  - 주요 포트: 8766 (MCP), 49100 (WebRTC Signaling)
+  - 볼륨: \`/data\` (합성 데이터), \`/config\` (환경 설정)
+- **ROS2**: \`${COMPOSE_PROJECT_NAME}_ros2\`
+  - 주요 포트: 9090 (Rosbridge WebSocket)
+  - 네트워크: \`host\` 모드 사용
+
+## 2. 쓰기 권한 경계 (HARD BOUNDARY)
+
+### 2.1 쓰기 허용 (Gemini/OmG)
+- \`.omc/state/gemini_distill.json\`
+- \`.omc/state/gemini_*.md\`
+- \`.omc/state/pending_research.md\`
+- \`wiki/lessons_*.md\` (교훈 기록 시)
+
+### 2.2 쓰기 금지 (Claude 전속 - 수정 금지)
+- \`.omc/scripts/**\` — 브릿지·검증·오케스트레이션 스크립트
+- \`.omc/specs/**\` — 사양 문서
+- \`AGENTS.md\`, \`GEMINI.md\`, \`CLAUDE.md\` 루트 계약 파일
+- \`.omc/plans/**\`, \`.omc/logs/**\`
+
+**위반 시 Claude가 즉시 롤백을 수행함.** 근거: \`.omc/specs/omg-integration-v1.md\` §2.2 (State Manager = Claude) — Gemini는 "정보 전처리기"이지 "파이프라인 편집자"가 아님.
+
+## 3. 기록 규약
+- 외부 지식 수집 결과물은 반드시 \`.omc/state/\` 하위 파일로 생성하여 Claude가 추후 참조할 수 있게 할 것.
+- 인용(Citation)이 포함된 답변을 우선시하며, 출처가 불분명한 정보는 "Untrusted"로 표시함.
+
+---
+**이 문서는 ${PROJECT_NAME} 프로젝트에서 Gemini가 정밀한 로봇 제어 및 데이터 처리를 수행하기 위한 길잡이입니다.**

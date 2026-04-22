@@ -98,3 +98,5 @@ distribution 자체의 설계 근거:
 - `.omc/specs/deep-interview-robot-setup-repo.md` (history)
 - `.omc/plans/robot-setup-repo-plan.md` (history)
 - [test-project/](test-project/) — new child (scaffolded 2026-04-21)
+- [fr5-arm/](fr5-arm/) — new child (scaffolded 2026-04-22)
+- [fr5-arm/](fr5-arm/) — V&V enabled child (2026-04-22)
