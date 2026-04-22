@@ -870,16 +870,21 @@ run_vendor() {
   log_info "== vendor layer =="
 
   local vdir="$ROBOT_ROOT/vendor/isaac-sim-mcp"
+  local edir="$ROBOT_ROOT/external/robotics-agent-skills"
   local gitmodules="$ROBOT_ROOT/.gitmodules"
 
-  if [[ ! -f "$gitmodules" ]] || ! grep -q 'vendor/isaac-sim-mcp' "$gitmodules" 2>/dev/null; then
-    log_warn "vendor/isaac-sim-mcp not declared in .gitmodules yet (plan Phase B pending)"
-    log_info "skip: user must run 'git submodule add <fork-url> vendor/isaac-sim-mcp' per plan B-5"
+  if [[ ! -f "$gitmodules" ]]; then
+    log_warn ".gitmodules missing — nothing to initialize"
     return 0
   fi
 
-  if [[ ! -d "$vdir" ]] || [[ -z "$(ls -A "$vdir" 2>/dev/null)" ]]; then
-    log_warn "vendor/isaac-sim-mcp not populated; run: git submodule update --init --recursive"
+  # Initialize any missing submodule working trees.
+  local need_init=0
+  if [[ ! -d "$vdir" ]] || [[ -z "$(ls -A "$vdir" 2>/dev/null)" ]]; then need_init=1; fi
+  if [[ ! -d "$edir" ]] || [[ -z "$(ls -A "$edir" 2>/dev/null)" ]]; then need_init=1; fi
+
+  if (( need_init )); then
+    log_warn "submodules not populated; run: git submodule update --init --recursive"
     if dry "git submodule update --init --recursive"; then
       return 0
     fi
@@ -892,12 +897,16 @@ run_vendor() {
     fi
   fi
 
-  if [[ -d "$vdir/.git" || -f "$vdir/.git" ]]; then
-    local sha; sha="$(git -C "$vdir" rev-parse --short HEAD 2>/dev/null || echo unknown)"
-    log_ok "vendor/isaac-sim-mcp present (HEAD=$sha)"
-  else
-    log_warn "vendor/isaac-sim-mcp exists but is not a git checkout"
-  fi
+  # Report HEAD for each declared submodule.
+  for sm in "$vdir" "$edir"; do
+    local rel="${sm#$ROBOT_ROOT/}"
+    if [[ -d "$sm/.git" || -f "$sm/.git" ]]; then
+      local sha; sha="$(git -C "$sm" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+      log_ok "$rel present (HEAD=$sha)"
+    elif [[ -d "$sm" ]]; then
+      log_warn "$rel exists but is not a git checkout"
+    fi
+  done
 
   # Compat symlink ~/robot/isaac-sim-mcp → vendor/isaac-sim-mcp
   local compat="$ROBOT_ROOT/isaac-sim-mcp"
@@ -1003,19 +1012,6 @@ main() {
   for l in "${targets[@]}"; do
     if ! run_layer "$l"; then
       log_fail "aborting after layer '$l' failure — re-run with --resume after fixing"
-      exit 1
-    fi
-  done
-
-  if [[ $FLAG_DRY_RUN -eq 1 ]]; then
-    log_ok "dry-run complete (0 files written)"
-  else
-    log_ok "install complete"
-  fi
-}
-
-main "$@"
-with --resume after fixing"
       exit 1
     fi
   done

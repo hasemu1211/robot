@@ -32,6 +32,9 @@ __pycache__/
 
 # Legacy / local-only symlinks (user-specific).
 # vendor/isaac-sim-mcp is now a real submodule (see .gitmodules).
+# install.sh `vendor` layer creates a per-machine compat symlink at /isaac-sim-mcp
+# → vendor/isaac-sim-mcp for back-compat with cwd-relative .mcp.json refs.
+/isaac-sim-mcp
 /datafactory
 
 # external/ is now a submodule path (see .gitmodules). No exclusion needed.
