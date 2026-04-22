@@ -78,6 +78,41 @@ Tier 표 + 각 항목에 **concrete destination path** + 처리 방식 한 줄. 
 
 마지막에 **사용자 확인 질문** (submodule URL, tag pin 여부, 실행 단위 A→B→C 순서).
 
+## 실행 단위 분할
+
+Tier 표 승인 후 커밋은 **entity 단위** 로 쪼갠다. 왜:
+
+- 각 entity 변경이 독립 검증 가능 (예: submodule 추가는 `git submodule status`, install.sh 는 `bash -n` / dry-run)
+- 한 entity 실패 시 다른 것 영향 없이 revert 가능
+- git log 가 "왜 이 변경이 들어왔는지" 를 추적 가능
+
+나쁜 예: "Tier B 전부 한 커밋으로 묶음" → 실패 포인트 식별 어려움 + 부분 revert 불가.
+
+좋은 예 (2026-04-22 세션): submodule isaac-sim-mcp → 커밋 #1 · submodule robotics-agent-skills → 커밋 #2 · install.sh vendor 레이어 수정 → 커밋 #3. 3개 독립 커밋.
+
+## Install/Doctor 대칭
+
+`scripts/install.sh` 에 새 레이어를 추가하면 **같은 커밋 (또는 직후 커밋)** 에 `scripts/doctor.sh check_<name>()` 도 추가. 반대 방향도 동일.
+
+왜: install 은 "처방" · doctor 는 "측정". 둘 중 하나만 있으면:
+- install 만 → 설치 후 상태 확인 수단 없음 → regression 탐지 불가
+- doctor 만 → WARN/FAIL 만 누적, 복구 수단 없음
+
+이번 세션 구체적 적용: `run_gemini()` 신설 커밋 직후 `check_gemini()` 커밋. `ALL_LAYERS` / `LAYERS` 배열 양쪽 동기화도 함께.
+
+## 재감사 루프
+
+Tier B (인프라 갭) 실행 직후에는 parent 현상이 바뀌었으므로 **A/C 를 다시 스캔한다**:
+
+- Tier B 로 등록한 submodule 덕분에 Tier A 의 destination 경로·참조가 stale 될 수 있음
+- 스테일 레퍼런스는 grep 으로 추적:
+  - `wiki/INDEX.md` 의 "전환 예정" / "TODO" / "Phase B pending"
+  - `.gitignore` 의 legacy 심링크 exclusion
+  - 코드 코멘트의 "will migrate" / "pending"
+- 발견 시 같은 세션에서 후속 커밋으로 업데이트 (다음 curator 가 또 발견하지 않도록)
+
+"한 번 Tier 표 만들고 끝" 이 아니라 **"실행 → 재스캔 → 추가 승격"** 의 루프. 이번 세션에서도 submodule 전환 후 INDEX.md "submodule 전환 예정" 줄을 같은 라운드에 "등록 완료 (HEAD 8b3dfcb)" 로 갱신함.
+
 ## 성공 기준
 
 1. Tier 표의 각 "사용 중" 주장이 `git remote` 또는 PyPI METADATA 또는 파일 실존으로 뒷받침됨 (증거 미제시 주장 0)
@@ -91,8 +126,10 @@ Tier 표 + 각 항목에 **concrete destination path** + 처리 방식 한 줄. 
 - Gemini headless (`-p`) 는 cwd 외 read 실패 → `--include-directories` 추가하거나 그냥 직접 read 하는 편이 빠름
 - datafactory 경험: 9개 스킬이 `.claude/skills/` 에 심링크로 존재하지만 타겟(`external/robotics-agent-skills`) 이 parent `.gitignore` 에 제외됨 → 새 clone 시 **스킬 0개**. 반드시 B-tier 로 기록
 - DF `.gitignore` 의 `.omc/state/*` 세분화 정책 (tracked state 허용, runtime 제외) 이 parent 의 통째 제외보다 우수 — curator 는 이런 "parent 의 거친 규칙" 도 B-tier 로 플래그
+- **pre-existing bug 발견 시 scope 결정**: 파일을 touch 하다가 관련 없는 부분에 syntax error / orphan 블록을 발견하면, (a) 동일 커밋에 fix 포함 (작고 명확하면) · (b) 별도 이슈로 플래그 (침투적·위험하면) 중 택. 2026-04-22 install.sh 의 끝부분 duplicate `main "$@"` 블록 (`bash -n` 실패 유발) 은 (a) 로 처리 — 크기 작고 기능 없는 쓰레기라 파일 hygiene 차원에서 즉시 제거
+- **blast radius 매핑**: 한 entity 도입·변경은 보통 여러 파일을 건드림. submodule 추가 사례: `.gitmodules` + `.gitignore` (exclusion 제거) + `scripts/install.sh vendor 레이어` + `scripts/doctor.sh check_vendor` + `wiki/INDEX.md` (스테일 라인) + 필요 시 `README.md` 의 submodule 안내 문단. destination 을 단수로 적지 말고 **"영향 파일 리스트"** 로 검증
 
-## Worked example — datafactory + Gemini extension 감사 (2026-04)
+## Worked example #1 — datafactory + Gemini extension 감사 (2026-04)
 
 실제 이 스킬이 재현해야 하는 플로우. 출처 2곳: `~/Desktop/Project/DATAFACTORY` + `~/.gemini/` host.
 
@@ -110,6 +147,24 @@ Tier 표 + 각 항목에 **concrete destination path** + 처리 방식 한 줄. 
 4. **destination 매핑**: 각 항목에 `wiki/<name>.md`, `templates/omc/skills/<name>.md.tmpl`, `scripts/install.sh gemini` 등 구체 경로 명시
 5. **사용자 확인 질문**: submodule URL 2개, OMG tag pin 버전, 실행 단위 A→B→C 순서
 6. **승인 후에만 커밋**: 이번 세션은 `docs(wiki): add robotics MCP alternatives to ecosystem_survey` 1건만 먼저 진행 (Tier C 의 일부)
+
+## Worked example #2 — 시급 A/B follow-up 8-commit 체인 (2026-04-22)
+
+example #1 이후 사용자 승인 하에 Tier A/B 실행 단계. "실행 단위 분할" · "Install/Doctor 대칭" · "재감사 루프" 규칙이 실전 적용된 흐름:
+
+1. `b2bb2d4 feat(curator): skill + /curator-audit command` — 본 스킬 자체의 초안 + 슬래시커맨드 wrapper
+2. `b7753fb feat(vendor): isaac-sim-mcp submodule` — 심링크 제거 + `.gitmodules` 등록 + HEAD 6653138 pin + `.gitignore` 라인 제거 (entity 단위 1개)
+3. `4a69a23 feat(external): robotics-agent-skills submodule` — 로컬 clone 제거 + fresh `git submodule add` + HEAD 8b3dfcb pin + `.gitignore` 라인 제거 (entity 단위 1개)
+4. `72ade42 fix(install): vendor layer + orphan tail prune` — run_vendor() 가 두 submodule 인지 + 사전 존재하던 `bash -n` 실패 유발 orphan block 제거 (주의 §"pre-existing bug" 의 (a) 처리)
+5. `4502f15 docs(omg): promote boundary + integration spec` — Tier B 완료 후 **재감사 루프** 가 발동, wiki/INDEX.md 의 stale 문구 ("submodule 전환 예정") 도 같은 라운드에 정정
+6. `e54e819 feat(install): gemini layer` — 새 install.sh 레이어 (run_gemini: CLI check + OMG tag pin + settings deep-merge + trustedFolders 등록)
+7. `ab01193 feat(doctor): gemini checks` — **Install/Doctor 대칭 규칙** 적용. check_gemini(cli · omg-extension · settings · trusted-folders) + help 문자열의 mcp 누락 보수
+8. (post-audit) `install.sh --step=gemini --yes` 실제 실행 → doctor 4/4 green 확인. **smoke test 후에만 "작업 완료" 선언**
+
+증거·검증 예시:
+- submodule 전환 시 DF `.claude/skills/*` 9개 심링크를 `readlink -f` 로 모두 재검증 → 경로 유지 확인 후 진행
+- install.sh 편집마다 `bash -n` + `--step=<layer> --dry-run --yes` 재실행
+- deep-merge 전후 `~/.gemini/settings.json` 의 `security.auth` 보존 확인 (seed 에 auth 없으므로 구조적 안전)
 
 ## Distribution 전파 경로
 
