@@ -17,6 +17,7 @@
 - [Agent Cookbook](agent_cookbook.md) — **(필독)** 실제 설정된 toolbox 카탈로그, 레시피, 관례 및 주의사항
 - [OMC 워크플로우](omc_workflows.md) — deepinit/plan/autopilot 파이프라인, 2-Tier wiki, tmux teammate 모드
 - [생태계 Survey](ecosystem_survey.md) — T1-T5 플러그인·스킬·MCP 카탈로그 (2026-04)
+- [OMC ↔ OmG 경계](omc_omg_boundary.md) — Gemini=untrusted input, HTTP citation 게이트, headless 레시피, 모델 교체 anti-pattern, 쓰기 ACL (사양은 [docs/OMG_INTEGRATION.md](../docs/OMG_INTEGRATION.md))
 
 ### 호스트 환경 세팅 (교훈)
 
@@ -34,7 +35,7 @@
 
 ## 🧠 외부 robotics 스킬 (3rd-party submodule)
 
-- 소스: `~/robot/external/robotics-agent-skills` (`arpitg1304/robotics-agent-skills`, submodule 전환 예정)
+- 소스: `~/robot/external/robotics-agent-skills` — submodule 등록 완료 (`arpitg1304/robotics-agent-skills`, HEAD `8b3dfcb`, `.gitmodules` 참조)
 - 9개 스킬: `ros2`, `docker-ros2-development`, `ros2-web-integration`, `robotics-design-patterns`, `robotics-testing`, `robot-perception`, `robot-bringup`, `robotics-security`, `robotics-software-principles`
 - child에 심링크 주입: `docs/ROBOTICS_SKILLS.md` 참조
 - Claude Code 진행 시 description trigger로 auto-load (progressive disclosure)
