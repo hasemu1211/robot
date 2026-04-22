@@ -23,6 +23,17 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash $HOME/robot/scripts/hook-validate-edit.sh"
+          }
+        ]
+      }
     ]
   }
 }
